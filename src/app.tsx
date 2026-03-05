@@ -306,9 +306,10 @@ export default function App({ outputPath = "BDD.md" }: AppProps) {
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Text bold color="blue">
-        BDD Wizard
-      </Text>
+      <Text color="white">{`  ^ ^
+ (o o)  BDD Wizard
+  (  )  your friendly sheep
+  -  -`}</Text>
 
       {step === "language" && (
         <Box flexDirection="column">
