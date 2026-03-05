@@ -29,6 +29,23 @@ ANTHROPIC_API_KEY=sk-... ./scripts/evolve.sh
 python3 scripts/check_bdd_coverage.py BDD.md
 ```
 
+## Interactive Evolution (Claude Code only)
+
+When the user asks to "evolve", "run an evolution session", or "implement the next scenario", follow this workflow. This does NOT affect `scripts/evolve.sh` or `scripts/agent.py` — those run unchanged as a GitHub Actions cron.
+
+1. Read `IDENTITY.md`, `BDD.md`, `BDD_STATUS.md`, `JOURNAL_INDEX.md` (in that order)
+2. Run `gh issue list` to check for open GitHub issues (unlike the cron job which reads `ISSUES_TODAY.md`, Claude Code has `gh` available directly). If any issues request new features, add them as Scenarios to `BDD.md` first before implementing. Note the issue numbers so they can be closed later.
+3. Run `python3 scripts/check_bdd_coverage.py BDD.md` to see current coverage
+4. Pick the highest-priority uncovered or failing scenario (top of BDD.md = highest priority)
+5. Write the test first — name it after the scenario — confirm it fails
+6. Write the minimum code to make it pass
+7. Run build and tests: check the commands from BDD.md frontmatter
+8. If checks fail: fix, try again up to 3 times; revert if still broken
+9. Commit: `git add -A && git commit -m "Day X: <short description>"`
+10. (Claude Code only) If the implemented scenario came from a GitHub issue, comment on it with `gh issue comment <N> --body "Implemented in <commit hash>"` and close it with `gh issue close <N>`.
+11. Update `BDD_STATUS.md`: `python3 scripts/check_bdd_coverage.py BDD.md > BDD_STATUS.md`
+12. Ask the user if they want to continue to the next scenario
+
 ## Safety Rules
 
 - Never modify `IDENTITY.md`, `scripts/evolve.sh`, or `.github/workflows/`
