@@ -1,6 +1,7 @@
 # BAADD — Behaviour and AI Driven Development
 
 A framework for building software with an AI agent guided entirely by BDD specifications.
+You humans should not be writing code — just the BDD scenarios that describe the behaviour you want.
 
 ## How it works
 
