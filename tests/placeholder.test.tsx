@@ -6,6 +6,6 @@ import App from "../src/app.js";
 describe("placeholder", () => {
   it("renders without crashing", () => {
     const { lastFrame } = render(<App />);
-    expect(lastFrame()).toContain("Hello");
+    expect(lastFrame()).toContain("programming language");
   });
 });
