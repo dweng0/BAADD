@@ -84,12 +84,36 @@ fi
 ISSUES_FILE="ISSUES_TODAY.md"
 echo "→ Fetching community issues..."
 if command -v gh &>/dev/null; then
+    # Derive repo owner dynamically so this works for any fork/deployment
+    REPO_OWNER="${REPO%%/*}"
+    # Trusted: issues authored by repo owner with agent-input label
     gh issue list --repo "$REPO" \
         --state open \
         --label "agent-input" \
+        --author "$REPO_OWNER" \
         --limit 10 \
-        --json number,title,body,labels,reactionGroups \
-        > /tmp/issues_raw.json 2>/dev/null || true
+        --json number,title,body,labels,reactionGroups,author \
+        > /tmp/issues_owner.json 2>/dev/null || echo "[]" > /tmp/issues_owner.json
+    # Community: issues with agent-approved label (owner-applied, enforced by GH Actions)
+    gh issue list --repo "$REPO" \
+        --state open \
+        --label "agent-approved" \
+        --limit 10 \
+        --json number,title,body,labels,reactionGroups,author \
+        > /tmp/issues_approved.json 2>/dev/null || echo "[]" > /tmp/issues_approved.json
+    # Merge, deduplicating by issue number
+    python3 -c "
+import json
+owner = json.load(open('/tmp/issues_owner.json'))
+approved = json.load(open('/tmp/issues_approved.json'))
+merged = {i['number']: i for i in owner + approved}
+print(json.dumps(list(merged.values())))
+" > /tmp/issues_merged.json 2>/dev/null || echo "[]" > /tmp/issues_merged.json
+    # Verify trust: owner's issues accepted directly; community issues only if
+    # the owner was the one who actually applied the agent-approved label
+    python3 scripts/verify_issue_trust.py /tmp/issues_merged.json \
+        --repo "$REPO" --owner "$REPO_OWNER" \
+        > /tmp/issues_raw.json 2>/dev/null || echo "[]" > /tmp/issues_raw.json
     python3 scripts/format_issues.py /tmp/issues_raw.json > "$ISSUES_FILE" 2>/dev/null || echo "No issues found." > "$ISSUES_FILE"
     echo "  $(grep -c '^### Issue' "$ISSUES_FILE" 2>/dev/null || echo 0) issues loaded."
 else
@@ -364,7 +388,7 @@ Commit: $(git rev-parse --short HEAD)" || true
     rm -f ISSUE_RESPONSE.md
 fi
 
-# ── Step 12: Push ──
+# ── Step 13: Push ──
 echo ""
 echo "→ Pushing..."
 git push || echo "  Push failed (check remote/auth)"
