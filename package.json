@@ -7,6 +7,7 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
+    "dev": "tsx src/cli.tsx",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'",
@@ -17,7 +18,12 @@
     "type": "git",
     "url": "git+https://github.com/dweng0/BAADD.git"
   },
-  "keywords": ["bdd", "cli", "ink", "react"],
+  "keywords": [
+    "bdd",
+    "cli",
+    "ink",
+    "react"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -36,6 +42,7 @@
     "eslint": "^9.39.3",
     "ink-testing-library": "^4.0.0",
     "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"

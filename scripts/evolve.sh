@@ -8,7 +8,7 @@
 # Environment:
 #   ANTHROPIC_API_KEY  — required
 #   REPO               — GitHub repo (default: read from git remote)
-#   MODEL              — LLM model (default: claude-opus-4-6)
+#   MODEL              — LLM model (default: claude-haiku-4-5-20251001)
 #   TIMEOUT            — Max session time in seconds (default: 3600)
 
 set -euo pipefail
@@ -23,7 +23,7 @@ echo "  Test:      $TEST_CMD"
 echo ""
 
 REPO="${REPO:-$(git remote get-url origin 2>/dev/null | sed 's/.*github.com[:/]//' | sed 's/\.git$//' || echo 'unknown/repo')}"
-MODEL="${MODEL:-claude-sonnet-4-6}"
+MODEL="${MODEL:-claude-haiku-4-5-20251001}"
 TIMEOUT="${TIMEOUT:-3600}"
 DATE=$(date +%Y-%m-%d)
 SESSION_TIME=$(date +%H:%M)
@@ -108,7 +108,8 @@ Read these files first, in this order:
 1. IDENTITY.md — your rules and purpose
 2. BDD.md — the spec (this is the ONLY thing you build)
 3. BDD_STATUS.md — which scenarios are currently covered
-4. JOURNAL.md — your recent history (last 10 entries)
+4. JOURNAL_INDEX.md — one-line summary per past session (cheap overview)
+   Only read JOURNAL.md if you need detail on a specific day.
 5. ISSUES_TODAY.md — community requests
 
 ${CI_STATUS_MSG:+
@@ -315,7 +316,26 @@ if ! git diff --cached --quiet; then
     echo "  Committed wrap-up."
 fi
 
-# ── Step 11: Handle issue response ──
+# ── Step 11: Update journal index ──
+echo "→ Updating JOURNAL_INDEX.md..."
+COMMITS_SUMMARY=$(git log --oneline "$SESSION_START_SHA"..HEAD --format="%s" \
+    | grep -v "session wrap-up\|BDD status\|journal entry\|fallback" \
+    | sed "s/Day $DAY[^:]*: //" \
+    | paste -sd "; " -)
+[ -z "$COMMITS_SUMMARY" ] && COMMITS_SUMMARY="no changes"
+
+if [ ! -f JOURNAL_INDEX.md ]; then
+    echo "# Journal Index" > JOURNAL_INDEX.md
+    echo "" >> JOURNAL_INDEX.md
+    echo "| Day | Date | Time | Coverage | Summary |" >> JOURNAL_INDEX.md
+    echo "|-----|------|------|----------|---------|" >> JOURNAL_INDEX.md
+fi
+echo "| $DAY | $DATE | $SESSION_TIME | $COVERED/$TOTAL | $COMMITS_SUMMARY |" >> JOURNAL_INDEX.md
+git add JOURNAL_INDEX.md
+git commit -m "Day $DAY ($SESSION_TIME): update journal index" || true
+echo "  Index updated."
+
+# ── Step 12: Handle issue response ──
 if [ -f ISSUE_RESPONSE.md ] && command -v gh &>/dev/null; then
     echo ""
     echo "→ Posting issue response..."

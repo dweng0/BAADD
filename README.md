@@ -64,7 +64,8 @@ Trigger manually: **Actions tab → Evolution → Run workflow**.
 |------|---------|
 | `BDD.md` | The spec — edit this to drive development |
 | `IDENTITY.md` | Agent constitution — do not modify |
-| `JOURNAL.md` | Agent's session log — auto-written |
+| `JOURNAL.md` | Agent's full session logs — auto-written |
+| `JOURNAL_INDEX.md` | One-line-per-session summary index — auto-generated |
 | `LEARNINGS.md` | Agent's cached research — auto-written |
 | `BDD_STATUS.md` | Scenario coverage status — auto-generated |
 | `scripts/evolve.sh` | Main evolution loop — do not modify |
@@ -96,6 +97,16 @@ Keep scenarios:
 - **Specific** — one behaviour per scenario
 - **Observable** — the `Then` clause must be testable
 - **Independent** — each scenario stands alone
+
+## Using Claude Code interactively
+
+If you have [Claude Code](https://claude.ai/code) installed, you can run evolution sessions interactively instead of waiting for the cron:
+
+```
+> evolve
+```
+
+Claude Code will read the spec, pick the next uncovered scenario, write the test, implement it, and commit — then ask if you want to continue. This uses the same workflow as the GitHub cron but lets you guide the session in real time.
 
 ## GitHub issues
 

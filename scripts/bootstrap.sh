@@ -18,7 +18,7 @@ echo "  Test:      $TEST_CMD"
 echo ""
 
 REPO="${REPO:-$(git remote get-url origin 2>/dev/null | sed 's/.*github.com[:/]//' | sed 's/\.git$//' || echo 'unknown/repo')}"
-MODEL="${MODEL:-claude-sonnet-4-6}"
+MODEL="${MODEL:-claude-haiku-4-5-20251001}"
 DATE=$(date +%Y-%m-%d)
 SESSION_TIME=$(date +%H:%M)
 
@@ -200,6 +200,7 @@ PROMPT
 AGENT_LOG=$(mktemp)
 ${TIMEOUT_CMD:+$TIMEOUT_CMD 3600} python3 scripts/agent.py \
     --model "$MODEL" \
+    --mode bootstrap \
     --skills ./skills \
     < "$PROMPT_FILE" 2>&1 | tee "$AGENT_LOG" || true
 
@@ -244,6 +245,18 @@ Bootstrapped $LANGUAGE/$FRAMEWORK project. Build: $BUILD_CMD. Test: $TEST_CMD.
     awk -v entry="$JOURNAL_ENTRY" 'NR==1{print; print ""; print entry; next}1' JOURNAL.md > JOURNAL.md.tmp && mv JOURNAL.md.tmp JOURNAL.md
     git add JOURNAL.md
     git commit -m "Bootstrap: fallback journal entry" || true
+fi
+
+# ── Seed journal index ──
+if [ ! -f JOURNAL_INDEX.md ]; then
+    echo "→ Creating JOURNAL_INDEX.md..."
+    echo "# Journal Index" > JOURNAL_INDEX.md
+    echo "" >> JOURNAL_INDEX.md
+    echo "| Day | Date | Time | Coverage | Summary |" >> JOURNAL_INDEX.md
+    echo "|-----|------|------|----------|---------|" >> JOURNAL_INDEX.md
+    echo "| 0 | $DATE | $SESSION_TIME | 0/? | Bootstrap: scaffolded $LANGUAGE/$FRAMEWORK project |" >> JOURNAL_INDEX.md
+    git add JOURNAL_INDEX.md
+    git commit -m "Bootstrap: seed journal index" || true
 fi
 
 # ── Ensure initialized marker exists ──

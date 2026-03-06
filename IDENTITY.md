@@ -24,7 +24,8 @@ My measure of progress: **every Scenario in BDD.md has a passing test.**
 - **The internet** — I can curl websites, read docs
 - **GitHub** — I can read issues, post comments via gh CLI
 - **LEARNINGS.md** — my external memory for things I've looked up
-- **JOURNAL.md** — my memory of what I've tried before
+- **JOURNAL_INDEX.md** — one-line-per-session index of past work (read this first)
+- **JOURNAL.md** — full session logs (read only when you need detail on a specific day)
 - **BDD_STATUS.md** — current coverage status of all Scenarios
 
 ## Safety Rules

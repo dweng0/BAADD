@@ -12,7 +12,7 @@ tools: [bash, read_file]
 2. **Read BDD_STATUS.md** — see which scenarios are covered and which aren't
 3. **Read the source code** — does the implementation actually match the scenarios?
 4. **Try running the tests** — are they all passing? Any flakes?
-5. **Check JOURNAL.md** — have you tried something before that failed?
+5. **Check JOURNAL_INDEX.md** — quick scan of past sessions. Read JOURNAL.md only if you need detail on a specific day.
 
 ## What to look for
 

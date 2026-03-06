@@ -185,29 +185,6 @@ def run_tool(name, input_data):
         return f"ERROR: {e}"
 
 
-def prune_old_tool_results(messages, keep_last=3):
-    """Replace content of old tool_result messages with [pruned] to limit context growth."""
-    # Find all user messages that contain tool_results
-    tool_result_indices = [
-        i for i, m in enumerate(messages)
-        if m["role"] == "user" and isinstance(m["content"], list)
-        and any(isinstance(b, dict) and b.get("type") == "tool_result" for b in m["content"])
-    ]
-    # Prune all but the last `keep_last`
-    to_prune = tool_result_indices[:-keep_last] if len(tool_result_indices) > keep_last else []
-    pruned = 0
-    for i in to_prune:
-        new_content = []
-        for block in messages[i]["content"]:
-            if isinstance(block, dict) and block.get("type") == "tool_result":
-                if block.get("content") != "[pruned]":
-                    block = {**block, "content": "[pruned]"}
-                    pruned += 1
-            new_content.append(block)
-        messages[i]["content"] = new_content
-    if pruned:
-        print(f"  \033[90m[context: pruned {pruned} old tool result(s)]\033[0m", flush=True)
-
 
 def load_skills(skills_dir):
     """Load skill files and return as system prompt additions."""
@@ -231,6 +208,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="claude-opus-4-6")
     parser.add_argument("--skills", default=None)
+    parser.add_argument("--mode", default="evolve", choices=["evolve", "bootstrap"],
+                        help="Session mode — affects wrap-up reminder content")
     args = parser.parse_args()
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -263,9 +242,19 @@ def main():
 
         if iteration >= wrap_up_at and not wrap_up_injected:
             print(f"\n\033[33m[agent: iteration {iteration}/{max_iterations} — injecting wrap-up reminder]\033[0m", flush=True)
-            messages.append({
-                "role": "user",
-                "content": (
+            if args.mode == "bootstrap":
+                wrap_up_content = (
+                    f"⚠️ You have used {iteration} of {max_iterations} allowed iterations. "
+                    "Stop any new work and wrap up the bootstrap:\n"
+                    "1. Run the build and tests — fix any failures.\n"
+                    "2. Commit all changes: git add -A && git commit -m \"Bootstrap: scaffold complete\"\n"
+                    "3. Create .baadd_initialized: touch .baadd_initialized && git add .baadd_initialized && git commit -m \"Bootstrap: mark initialized\"\n"
+                    "4. Write a Day 0 journal entry to JOURNAL.md: what was scaffolded, what works, what the first evolve session should tackle.\n"
+                    "5. Commit the journal: git add JOURNAL.md && git commit -m \"Bootstrap: journal entry\"\n"
+                    "Do not start implementing any BDD scenarios."
+                )
+            else:
+                wrap_up_content = (
                     f"⚠️ You have used {iteration} of {max_iterations} allowed iterations. "
                     "Stop starting new work. Finish only what you are currently doing, then wrap up:\n"
                     "1. Run the build and tests — fix any failures before committing.\n"
@@ -276,7 +265,7 @@ def main():
                     "4. Commit everything.\n"
                     "Do not start any new scenarios."
                 )
-            })
+            messages.append({"role": "user", "content": wrap_up_content})
             wrap_up_injected = True
 
         response = client.messages.create(
@@ -333,7 +322,6 @@ def main():
 
             messages.append({"role": "assistant", "content": response.content})
             messages.append({"role": "user", "content": tool_results})
-            prune_old_tool_results(messages)
         else:
             print(f"\n[stopped: {response.stop_reason}]", flush=True)
             break
