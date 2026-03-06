@@ -25,19 +25,19 @@ Override the model at any time with `--model <name>` or force a provider with `-
 
 ---
 
-# The task
+## What is it?
 
-Write software by describing its behaviour in a `BDD.md` file.
+Describe your software's behaviour in a `BDD.md` file. An AI agent does the rest.
 
-## The twist
+- Reads the spec and writes code to satisfy it
+- Tests first — commits only when they pass and coverage holds
+- Journals every session and learns from experience
 
-- An AI agent reads the BDD spec and writes code to satisfy it
-- The agent commits only when tests pass and coverage is maintained
-- The agent journals its actions and learns from experience
+> **You write the spec. The agent writes the code.**
 
-## The goal
+### Using Claude Code?
 
-> Build useful software using human-readable specifications, never having to write code manually.
+Run `evolve` in your terminal and Claude Code will read the spec, pick the next uncovered scenario, write the test, implement it, and commit — then ask if you want to continue.
 
 ---
 
