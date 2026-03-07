@@ -97,7 +97,16 @@ flowchart TD
 
 ## Setup
 
-### 1. Configure BDD.md
+### 1. Scaffold a new project
+
+```bash
+mkdir my-project && cd my-project
+curl -fsSL https://raw.githubusercontent.com/dweng0/BAADD/main/install.sh | bash
+```
+
+This downloads all framework files, creates a `BDD.md` template, and initialises a git repo. A `.baadd` manifest is written to track the framework version — run the same command again at any time to update.
+
+### 2. Configure BDD.md
 
 Edit the frontmatter at the top of `BDD.md`:
 
@@ -115,7 +124,7 @@ birth_date: 2026-01-01      # project start date (used for day counter)
 
 Then write your features and scenarios below the frontmatter.
 
-### 2. Add your Anthropic API key
+### 3. Add your API key
 
 In your GitHub repo: **Settings → Secrets and variables → Actions → New repository secret**
 
@@ -123,19 +132,19 @@ In your GitHub repo: **Settings → Secrets and variables → Actions → New re
 |------|-------|
 | `ANTHROPIC_API_KEY` | your `sk-ant-...` key |
 
-### 3. Install agent dependencies
+### 4. Install agent dependencies (local runs only)
 
 ```bash
 pip install anthropic
 ```
 
-### 4. Run manually
+### 5. Run manually
 
 ```bash
 ANTHROPIC_API_KEY=sk-... ./scripts/evolve.sh
 ```
 
-### 5. Let it run on schedule
+### 6. Let it run on schedule
 
 Push to GitHub. The workflow runs automatically every 8 hours via cron.
 
