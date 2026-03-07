@@ -27,11 +27,32 @@ Override the model at any time with `--model <name>` or force a provider with `-
 
 ## What is it?
 
-Describe your software's behaviour in a `BDD.md` file. An AI agent does the rest.
+BAADD is a **meta-framework / template** — not a library you install, but a pattern you adopt. You bring your spec; BAADD brings the agent, the loop, and the rules that keep it honest.
 
-- Reads the spec and writes code to satisfy it
-- Tests first — commits only when they pass and coverage holds
-- Journals every session and learns from experience
+The three parts that make it work:
+
+```mermaid
+graph TD
+    subgraph BAADD["BAADD — the meta-framework"]
+        BDD["📄 BDD Spec Format\n(BDD.md + frontmatter)\nWhat to build"]
+        LOOP["🔄 Evolve Loop\n(scripts/ + GitHub Actions)\nHow to build it"]
+        CONTRACT["📜 Agent Behaviour Contract\n(IDENTITY.md)\nHow the agent must behave"]
+    end
+
+    BDD -->|"parsed by"| LOOP
+    CONTRACT -->|"governs"| LOOP
+    LOOP -->|"implements scenarios from"| BDD
+    LOOP -->|"journals progress to"| BDD
+
+    style BDD fill:#a855f7,color:#fff,stroke:none
+    style LOOP fill:#3b82f6,color:#fff,stroke:none
+    style CONTRACT fill:#6366f1,color:#fff,stroke:none
+    style BAADD fill:#1e1e2e,color:#cdd6f4,stroke:#45475a
+```
+
+- **BDD Spec Format** — `BDD.md` with YAML frontmatter declaring language, build/test commands, and Gherkin scenarios. This is the only file you edit.
+- **Evolve Loop** — the `scripts/` + GitHub Actions cron that drives the agent: find uncovered scenario → write test → write code → commit.
+- **Agent Behaviour Contract** — `IDENTITY.md`, the agent's constitution. It defines what the agent is allowed to do, what it must never do, and how it measures progress.
 
 > **You write the spec. The agent writes the code.**
 
