@@ -1,12 +1,12 @@
-# BAADD — Behaviour and AI Driven Development
+# poppins — Behaviour and AI Driven Development
 <div align="center">
-<img src="cute_sheep.svg" width="180" alt="BAADD sheep mascot"/>
+<img src="cute_sheep.svg" width="180" alt="poppins mascot"/>
 
 </div>
 
 ## Supported Models
 
-BAADD auto-detects your provider from environment variables. Set one API key and run — no config needed.
+poppins auto-detects your provider from environment variables. Set one API key and run — no config needed.
 
 | Provider | Environment Variable | Default Model | Notes |
 |----------|---------------------|---------------|-------|
@@ -25,13 +25,13 @@ Override the model at any time with `--model <name>` or force a provider with `-
 
 ## What is it?
 
-BAADD is a **meta-framework / template** — not a library you install, but a pattern you adopt. You bring your spec; BAADD brings the agent, the loop, and the rules that keep it honest.
+poppins is a **meta-framework / template** — not a library you install, but a pattern you adopt. You bring your spec; poppins brings the agent, the loop, and the rules that keep it honest.
 
 The three parts that make it work:
 
 ```mermaid
 graph TD
-    subgraph BAADD["BAADD — the meta-framework"]
+    subgraph BAADD["poppins — the meta-framework"]
         BDD["📄 BDD Spec Format\n(BDD.md + frontmatter)\nWhat to build"]
         LOOP["🔄 Evolve Loop\n(scripts/ + GitHub Actions)\nHow to build it"]
         CONTRACT["📜 Agent Behaviour Contract\n(IDENTITY.md)\nHow the agent must behave"]
@@ -99,10 +99,10 @@ flowchart TD
 
 ```bash
 mkdir my-project && cd my-project
-curl -fsSL https://raw.githubusercontent.com/dweng0/BAADD/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dweng0/POPPINS/main/install.sh | bash
 ```
 
-This downloads all framework files, creates a `BDD.md` template, and initialises a git repo. A `.baadd` manifest is written to track the framework version — run the same command again at any time to update.
+This downloads all framework files, creates a `BDD.md` template, and initialises a git repo. A `.poppins` manifest is written to track the framework version — run the same command again at any time to update.
 
 ### 2. Configure BDD.md
 
@@ -155,13 +155,13 @@ Trigger manually: **Actions tab → Evolution → Run workflow**.
 ### Project initialization and updates
 
 ```bash
-# Initialize BAADD in a new project
-curl -fsSL https://raw.githubusercontent.com/dweng0/BAADD/main/install.sh | bash
+# Initialize poppins in a new project
+curl -fsSL https://raw.githubusercontent.com/dweng0/POPPINS/main/install.sh | bash
 
-# Update BAADD framework to latest version (preserves your journals)
+# Update poppins framework to latest version (preserves your journals)
 ./install.sh --update
 
-# Pin to a specific BAADD version
+# Pin to a specific poppins version
 ./install.sh --version v1.2.0
 ```
 
@@ -198,7 +198,7 @@ cat JOURNAL_INDEX.md
 cat JOURNAL.md
 
 # Check framework version
-cat .baadd | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])"
+cat .poppins | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])"
 ```
 
 ---
@@ -270,6 +270,6 @@ If an issue proposes a new feature, the agent will add it to `BDD.md` as a Scena
 
 ## Links
 
-- **BAADD Framework**: https://github.com/dweng0/BAADD
+- **poppins Framework**: https://github.com/dweng0/POPPINS
 - **Documentation**: See the `CLAUDE.md` file in your project for detailed guidance
 - **GitHub Issues**: Use `agent-input` label to task the AI agent

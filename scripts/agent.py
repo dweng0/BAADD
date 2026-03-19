@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BAADD agent — multi-provider AI agent with tool use.
+poppins agent — multi-provider AI agent with tool use.
 Reads a prompt from stdin, runs the agent loop, prints output.
 
 Usage:
@@ -392,7 +392,7 @@ def make_wrap_up_message(iteration, max_iterations, mode):
             "Stop any new work and wrap up the bootstrap:\n"
             "1. Run the build and tests — fix any failures.\n"
             "2. Commit all changes: git add -A && git commit -m \"Bootstrap: scaffold complete\"\n"
-            "3. Create .baadd_initialized: touch .baadd_initialized && git add .baadd_initialized && git commit -m \"Bootstrap: mark initialized\"\n"
+            "3. Create .poppins_initialized: touch .poppins_initialized && git add .poppins_initialized && git commit -m \"Bootstrap: mark initialized\"\n"
             "4. Write a Day 0 journal entry to JOURNAL.md.\n"
             "5. Commit the journal: git add JOURNAL.md && git commit -m \"Bootstrap: journal entry\"\n"
             "Do not start implementing any BDD scenarios."
@@ -468,7 +468,7 @@ def run_anthropic_loop(api_key, model, system_prompt, prompt, mode):
                         print(f"\n\033[33m> {text}\033[0m", flush=True)
 
         if response.stop_reason == "end_turn":
-            print(f"\n[BAADD agent done — {iteration} iterations]", flush=True)
+            print(f"\n[poppins agent done — {iteration} iterations]", flush=True)
             break
 
         if response.stop_reason == "tool_use":
@@ -489,7 +489,7 @@ def run_anthropic_loop(api_key, model, system_prompt, prompt, mode):
             break
 
     if iteration >= max_iterations:
-        print(f"\n[BAADD agent: hit iteration limit ({max_iterations})]", flush=True)
+        print(f"\n[poppins agent: hit iteration limit ({max_iterations})]", flush=True)
 
 
 def run_openai_loop(client, model, system_prompt, prompt, mode):
@@ -535,7 +535,7 @@ def run_openai_loop(client, model, system_prompt, prompt, mode):
                     print(f"\n\033[33m> {text}\033[0m", flush=True)
 
         if choice.finish_reason == "stop":
-            print(f"\n[BAADD agent done — {iteration} iterations]", flush=True)
+            print(f"\n[poppins agent done — {iteration} iterations]", flush=True)
             break
 
         if choice.finish_reason == "tool_calls":
@@ -560,7 +560,7 @@ def run_openai_loop(client, model, system_prompt, prompt, mode):
             break
 
     if iteration >= max_iterations:
-        print(f"\n[BAADD agent: hit iteration limit ({max_iterations})]", flush=True)
+        print(f"\n[poppins agent: hit iteration limit ({max_iterations})]", flush=True)
 
 
 def main():
@@ -611,7 +611,7 @@ def main():
     if skills_text:
         system_prompt += "\n\n" + skills_text
 
-    print(f"[BAADD agent starting — provider: {provider}, model: {model}]", flush=True)
+    print(f"[poppins agent starting — provider: {provider}, model: {model}]", flush=True)
 
     if provider == "anthropic":
         run_anthropic_loop(api_key, model, system_prompt, prompt, args.mode)
