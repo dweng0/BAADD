@@ -436,6 +436,7 @@ if [ -f ISSUE_RESPONSE.md ] && command -v gh &>/dev/null; then
     # Support multiple issue blocks in ISSUE_RESPONSE.md
     grep "^issue_number:" ISSUE_RESPONSE.md 2>/dev/null | awk '{print $2}' | while read -r ISSUE_NUM; do
         [ -z "$ISSUE_NUM" ] && continue
+        [[ ! "$ISSUE_NUM" =~ ^[0-9]+$ ]] && continue
         # Extract status and comment for this issue block
         STATUS=$(awk "/^issue_number: $ISSUE_NUM\$/,/^issue_number:/{if(/^status:/) print \$2}" ISSUE_RESPONSE.md | head -1)
         COMMENT=$(awk "/^issue_number: $ISSUE_NUM\$/,/^issue_number:/{if(/^comment:/) {sub(/^comment: /,\"\"); print}}" ISSUE_RESPONSE.md | head -1)
