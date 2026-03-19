@@ -4,8 +4,6 @@
 
 </div>
 
-[![Evolution](https://github.com/dweng0/BAADD/actions/workflows/evolve.yml/badge.svg)](https://github.com/dweng0/BAADD/actions/workflows/evolve.yml)
-
 ## Supported Models
 
 BAADD auto-detects your provider from environment variables. Set one API key and run — no config needed.
