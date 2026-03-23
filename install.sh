@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="dweng0/POPPINS"
+REPO="dweng0/BAADD"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}"
 API_BASE="https://api.github.com/repos/${REPO}"
-MANIFEST_FILE=".poppins"
+MANIFEST_FILE=".baadd"
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 VERSION=""
@@ -17,9 +17,9 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: install.sh [--update] [--version vX.Y.Z]"
       echo ""
-      echo "  (no args)          Init a new poppins project in the current directory"
-      echo "  --update           Update framework files in an existing poppins project"
-      echo "  --version vX.Y.Z   Pin to a specific poppins version (default: latest)"
+      echo "  (no args)          Init a new baadd project in the current directory"
+      echo "  --update           Update framework files in an existing baadd project"
+      echo "  --version vX.Y.Z   Pin to a specific baadd version (default: latest)"
       exit 0 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
@@ -32,7 +32,7 @@ fi
 
 # ── Resolve version ───────────────────────────────────────────────────────────
 if [[ -z "$VERSION" ]]; then
-  echo "Fetching latest poppins version..."
+  echo "Fetching latest baadd version..."
   VERSION=$(curl -fsSL "${API_BASE}/releases/latest" \
     -H "Accept: application/vnd.github+json" \
     | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
@@ -73,11 +73,11 @@ if [[ "$FORCE_UPDATE" == true ]]; then
   CURRENT=$(python3 -c "import json; print(json.load(open('${MANIFEST_FILE}'))['version'])" 2>/dev/null || echo "unknown")
 
   if [[ "$CURRENT" == "$VERSION" ]]; then
-    echo "Already on poppins ${VERSION}. Nothing to do."
+    echo "Already on baadd ${VERSION}. Nothing to do."
     exit 0
   fi
 
-  echo "Updating poppins: ${CURRENT} → ${VERSION}"
+  echo "Updating baadd: ${CURRENT} → ${VERSION}"
   echo ""
 
   # Archive existing journals before overwriting
@@ -110,7 +110,7 @@ if [[ "$FORCE_UPDATE" == true ]]; then
   chmod +x scripts/*.sh
 
   echo ""
-  echo "poppins updated to ${VERSION}."
+  echo "baadd updated to ${VERSION}."
   echo "Previous journals archived as:"
   if [[ -f "JOURNAL_archive_${CURRENT}.md" ]]; then
     echo "  - JOURNAL_archive_${CURRENT}.md"
@@ -121,7 +121,7 @@ if [[ "$FORCE_UPDATE" == true ]]; then
 
 # ── Init mode ─────────────────────────────────────────────────────────────────
 else
-  echo "Initializing poppins ${VERSION}..."
+  echo "Initializing baadd ${VERSION}..."
   echo ""
 
   # Download manifest first — it defines what else to get
@@ -158,7 +158,7 @@ else
   chmod +x scripts/*.sh
 
   echo ""
-  echo "poppins ${VERSION} ready."
+  echo "baadd ${VERSION} ready."
   echo ""
   echo "Next steps:"
   echo "  1. Edit BDD.md — describe your project's features and scenarios"
