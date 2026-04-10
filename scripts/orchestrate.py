@@ -381,7 +381,7 @@ Now begin. Read IDENTITY.md first, then BDD.md.
         if os.path.exists(src):
             run_cmd(f'cp "{src}" "{wt_path}/"')
 
-    # Run the agent
+    # Run the agent - stream output in real-time
     event_log = os.path.join(wt_path, "agent_events.jsonl")
     provider_flag = f'--provider "{provider}" ' if provider else ""
     agent_cmd = (
@@ -392,8 +392,33 @@ Now begin. Read IDENTITY.md first, then BDD.md.
     )
 
     start_time = time.time()
-    stdout, stderr, rc = run_cmd(agent_cmd, timeout=timeout + 60)
+    stdout_lines = []
+
+    # Stream output in real-time with prefix
+    prefix = f"[{scenario_name[:40]}]"
+    try:
+        proc = subprocess.Popen(
+            agent_cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            cwd=wt_path,
+        )
+        for line in proc.stdout:
+            line = line.rstrip()
+            stdout_lines.append(line)
+            # Print in real-time with scenario prefix
+            print(f"  {prefix} {line}", flush=True)
+        proc.wait(timeout=timeout + 60)
+        rc = proc.returncode
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        stdout_lines.append("TIMEOUT")
+        rc = 1
     elapsed = time.time() - start_time
+
+    stdout = "\n".join(stdout_lines)
 
     # Clean up prompt
     try:
@@ -621,95 +646,84 @@ def main():
         print("  [dry-run] Would spawn agents for the above scenarios.", flush=True)
         return
 
-    # Step 3: Spawn workers in batches
-    # Process in batches of max_agents, merging after each batch
-    results = []
-    batch_num = 0
-
-    for batch_start in range(0, len(ordered_names), max_agents):
-        batch = ordered_names[batch_start : batch_start + max_agents]
-        batch_num += 1
-        print(f"  === Batch {batch_num} ({len(batch)} agent(s)) ===", flush=True)
-
-        # Create worktrees and spawn agents
-        workers = {}
-        for scenario_name in batch:
-            slug = scenario_to_slug(scenario_name)
-            wt_path, branch = create_worktree(slug, main_dir)
-            if not wt_path:
-                print(f"    Failed to create worktree for: {scenario_name}", flush=True)
-                continue
-            print(f"    Spawning: {scenario_name}", flush=True)
-            print(f"      Branch:   {branch}", flush=True)
-            print(f"      Worktree: {wt_path}", flush=True)
-            workers[scenario_name] = (wt_path, branch)
-
-        if not workers:
-            print(f"    No workers spawned in this batch.", flush=True)
+    # Step 3: Create worktrees for all scenarios
+    print(f"\n  Creating worktrees for {len(ordered_names)} scenarios...", flush=True)
+    workers = {}
+    for scenario_name in ordered_names:
+        slug = scenario_to_slug(scenario_name)
+        wt_path, branch = create_worktree(slug, main_dir)
+        if not wt_path:
+            print(
+                f"  [WARN] Failed to create worktree for: {scenario_name}", flush=True
+            )
             continue
+        workers[scenario_name] = (wt_path, branch)
+        print(f"  {scenario_name[:50]} → {wt_path}", flush=True)
 
-        # Run workers in parallel
-        with ThreadPoolExecutor(max_workers=max_agents) as executor:
-            futures = {}
-            for scenario_name, (wt_path, branch) in workers.items():
-                future = executor.submit(
-                    run_worker,
-                    scenario_name,
-                    wt_path,
-                    branch,
-                    main_dir,
-                    config,
-                )
-                futures[future] = scenario_name
+    if not workers:
+        print("  No worktrees created. Exiting.", flush=True)
+        return
 
-            batch_results = []
-            for future in as_completed(futures):
-                scenario_name = futures[future]
-                try:
-                    result = future.result()
-                    batch_results.append(result)
-                    status = (
-                        "OK"
-                        if result["tests_pass"] and result["commits"] > 0
-                        else "FAIL"
-                    )
-                    print(
-                        f"    [{status}] {scenario_name} — {result['commits']} commit(s), {result['elapsed_s']}s",
-                        flush=True,
-                    )
-                    if status == "FAIL" and result.get("stdout"):
-                        stdout_preview = result["stdout"].strip()[:500]
-                        if stdout_preview:
-                            print(f"      Output: {stdout_preview}", flush=True)
-                except Exception as e:
-                    print(f"    [ERROR] {scenario_name}: {e}", flush=True)
-                    batch_results.append(
-                        {
-                            "scenario": scenario_name,
-                            "branch": workers[scenario_name][1],
-                            "wt_path": workers[scenario_name][0],
-                            "commits": 0,
-                            "tests_pass": False,
-                            "elapsed_s": 0,
-                            "rc": 1,
-                            "stdout": str(e),
-                        }
-                    )
+    # Step 4: Run all agents in parallel (ThreadPoolExecutor handles concurrency limit)
+    print(
+        f"\n  Running {len(workers)} agents (max {max_agents} concurrent)...",
+        flush=True,
+    )
+    results = []
 
-        # Step 4: Merge results sequentially (in the planned order)
-        print(f"\n  Merging batch {batch_num}...", flush=True)
-        for result in sorted(
-            batch_results, key=lambda r: ordered_names.index(r["scenario"])
-        ):
-            print(f"  [{result['scenario']}]", flush=True)
-            merged = merge_worker_result(result, main_dir)
-            results.append({**result, "merged": merged})
-
-        # Clean up worktrees
+    with ThreadPoolExecutor(max_workers=max_agents) as executor:
+        futures = {}
         for scenario_name, (wt_path, branch) in workers.items():
-            remove_worktree(wt_path, branch, main_dir)
+            future = executor.submit(
+                run_worker,
+                scenario_name,
+                wt_path,
+                branch,
+                main_dir,
+                config,
+            )
+            futures[future] = scenario_name
 
-        print("", flush=True)
+        # Collect results as they complete (merge happens later in order)
+        for future in as_completed(futures):
+            scenario_name = futures[future]
+            try:
+                result = future.result()
+                results.append(result)
+                status = (
+                    "OK" if result["tests_pass"] and result["commits"] > 0 else "FAIL"
+                )
+                print(
+                    f"  [{status}] {scenario_name} — {result['commits']} commit(s), {result['elapsed_s']}s",
+                    flush=True,
+                )
+            except Exception as e:
+                print(f"  [ERROR] {scenario_name}: {e}", flush=True)
+                results.append(
+                    {
+                        "scenario": scenario_name,
+                        "branch": workers[scenario_name][1],
+                        "wt_path": workers[scenario_name][0],
+                        "commits": 0,
+                        "tests_pass": False,
+                        "elapsed_s": 0,
+                        "rc": 1,
+                        "stdout": str(e),
+                    }
+                )
+
+    # Step 5: Merge all results in the planned order (sequential, but doesn't block spawning)
+    print(f"\n  Merging {len(results)} results in order...", flush=True)
+    for result in sorted(results, key=lambda r: ordered_names.index(r["scenario"])):
+        scenario = result["scenario"]
+        print(f"  [{scenario[:50]}]", flush=True)
+        merged = merge_worker_result(result, main_dir)
+        result["merged"] = merged
+
+    # Clean up worktrees
+    print(f"\n  Cleaning up {len(workers)} worktrees...", flush=True)
+    for scenario_name, (wt_path, branch) in workers.items():
+        remove_worktree(wt_path, branch, main_dir)
 
     # Step 5: Final wrap-up
     print("  Updating coverage...", flush=True)
