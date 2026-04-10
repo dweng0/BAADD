@@ -107,7 +107,7 @@ if [[ "$FORCE_UPDATE" == true ]]; then
   done < <(read_manifest_files)
 
   stamp_version
-  chmod +x scripts/*.sh
+  chmod +x scripts/*.sh scripts/*.py
 
   # Ensure locks directory exists (used for parallel-agent coordination)
   if [[ ! -d "locks" ]]; then
@@ -167,7 +167,7 @@ else
   touch locks/.gitkeep
   echo "  locks/ (created)"
 
-  chmod +x scripts/*.sh
+  chmod +x scripts/*.sh scripts/*.py
 
   echo ""
   echo "baadd ${VERSION} ready."
