@@ -109,6 +109,13 @@ if [[ "$FORCE_UPDATE" == true ]]; then
   stamp_version
   chmod +x scripts/*.sh
 
+  # Ensure locks directory exists (used for parallel-agent coordination)
+  if [[ ! -d "locks" ]]; then
+    mkdir -p locks
+    touch locks/.gitkeep
+    echo "  locks/ (created)"
+  fi
+
   echo ""
   echo "baadd updated to ${VERSION}."
   echo "Previous journals archived as:"
@@ -154,6 +161,11 @@ else
     git init -q
     echo "  .git (initialized)"
   fi
+
+  # Create locks directory for parallel-agent coordination
+  mkdir -p locks
+  touch locks/.gitkeep
+  echo "  locks/ (created)"
 
   chmod +x scripts/*.sh
 

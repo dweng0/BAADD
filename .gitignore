@@ -1,4 +1,5 @@
 ISSUE_RESPONSE.md
+locks/
 __pycache__/
 *.pyc
 .env
