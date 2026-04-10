@@ -99,15 +99,120 @@ def read_file_safe(path):
         return ""
 
 
-def plan_scenario_order(uncovered, bdd_content, model):
+def detect_provider():
+    """Detect available LLM provider from environment, mirroring agent.py priority."""
+    priority = [
+        ("anthropic",  "ANTHROPIC_API_KEY"),
+        ("moonshot",   "MOONSHOT_API_KEY"),
+        ("dashscope",  "DASHSCOPE_API_KEY"),
+        ("openai",     "OPENAI_API_KEY"),
+        ("groq",       "GROQ_API_KEY"),
+        ("custom",     "CUSTOM_API_KEY"),
+    ]
+    for name, env_var in priority:
+        if os.environ.get(env_var):
+            return name
+    if os.environ.get("CUSTOM_BASE_URL"):
+        return "custom"
+    if os.environ.get("OLLAMA_HOST"):
+        return "ollama"
+    try:
+        import urllib.request
+        urllib.request.urlopen("http://localhost:11434", timeout=1)
+        return "ollama"
+    except Exception:
+        pass
+    return None
+
+
+def resolve_model_and_client(provider, model_override=None):
+    """Return (model_name, callable) where callable(prompt) -> response text.
+    Supports all providers agent.py supports."""
+    defaults = {
+        "anthropic":  "claude-haiku-4-5-20251001",
+        "moonshot":   "kimi-latest",
+        "dashscope":  "qwen-max",
+        "openai":     "gpt-4o",
+        "groq":       "llama-3.3-70b-versatile",
+        "ollama":     "llama3.2",
+        "custom":     os.environ.get("CUSTOM_MODEL", ""),
+    }
+    base_urls = {
+        "moonshot":  "https://api.moonshot.cn/v1",
+        "dashscope": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        "groq":      "https://api.groq.com/openai/v1",
+    }
+    api_key_envs = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "moonshot":  "MOONSHOT_API_KEY",
+        "dashscope": "DASHSCOPE_API_KEY",
+        "openai":    "OPENAI_API_KEY",
+        "groq":      "GROQ_API_KEY",
+        "custom":    "CUSTOM_API_KEY",
+    }
+
+    model = model_override or os.environ.get("MODEL") or defaults.get(provider, "")
+
+    if provider == "anthropic":
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        def call(prompt):
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            response = client.messages.create(
+                model=model, max_tokens=2048,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        return model, call
+
+    # All other providers via OpenAI-compatible client
+    try:
+        from openai import OpenAI
+    except ImportError:
+        raise RuntimeError("openai package not installed: pip install openai")
+
+    api_key = os.environ.get(api_key_envs.get(provider, ""), "")
+    base_url = base_urls.get(provider)
+
+    if provider == "ollama":
+        host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        base_url = host.rstrip("/") + "/v1"
+        api_key = "ollama"
+        model = model_override or os.environ.get("MODEL") or os.environ.get("CUSTOM_MODEL", "llama3.2")
+    elif provider == "custom":
+        base_url = os.environ.get("CUSTOM_BASE_URL")
+        model = model_override or os.environ.get("MODEL") or os.environ.get("CUSTOM_MODEL", "")
+        if not api_key:
+            api_key = "custom"
+
+    client_kwargs = {"api_key": api_key or "none"}
+    if base_url:
+        client_kwargs["base_url"] = base_url
+    oai_client = OpenAI(**client_kwargs)
+
+    def call(prompt):
+        response = oai_client.chat.completions.create(
+            model=model, max_tokens=2048,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.choices[0].message.content.strip()
+
+    return model, call
+
+
+def plan_scenario_order(uncovered, bdd_content, provider, model_override=None):
     """Use a single AI call to order scenarios by dependency and priority.
 
     Returns a list of scenario names in recommended implementation order.
-    Falls back to BDD.md order if the AI call fails.
+    Falls back to BDD.md order if the AI call fails or no provider is available.
     """
     scenario_names = [s for _, s in uncovered]
 
     if len(scenario_names) <= 1:
+        return scenario_names
+
+    if not provider:
+        print("  No LLM provider available — using BDD.md order", flush=True)
         return scenario_names
 
     prompt = f"""You are analyzing a BDD specification to determine the best implementation order for uncovered scenarios.
@@ -131,32 +236,21 @@ Return ONLY a JSON array of scenario names in the order they should be implement
 No explanation, no markdown, just the JSON array. Example:
 ["Login with valid credentials", "View user dashboard", "Logout"]"""
 
-    # Try Anthropic first, then OpenAI-compatible
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if api_key:
-        try:
-            import anthropic
-            client = anthropic.Anthropic(api_key=api_key)
-            response = client.messages.create(
-                model=model,
-                max_tokens=2048,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            text = response.content[0].text.strip()
-            # Extract JSON array from response
-            match = re.search(r'\[.*\]', text, re.DOTALL)
-            if match:
-                ordered = json.loads(match.group())
-                # Validate all scenarios are present
-                if set(ordered) == set(scenario_names):
-                    return ordered
-                # If AI returned a subset, append missing ones
-                missing = [s for s in scenario_names if s not in ordered]
-                return ordered + missing
-        except Exception as e:
-            print(f"  AI ordering failed ({e}), using BDD.md order", flush=True)
+    try:
+        model, call = resolve_model_and_client(provider, model_override)
+        print(f"  Planning with {provider} / {model}", flush=True)
+        text = call(prompt)
+        match = re.search(r'\[.*\]', text, re.DOTALL)
+        if match:
+            ordered = json.loads(match.group())
+            if set(ordered) == set(scenario_names):
+                return ordered
+            # AI returned a subset — append anything missing
+            missing = [s for s in scenario_names if s not in ordered]
+            return ordered + missing
+    except Exception as e:
+        print(f"  AI ordering failed ({e}), using BDD.md order", flush=True)
 
-    # Fallback: BDD.md order (top = highest priority)
     return scenario_names
 
 
@@ -382,12 +476,20 @@ def main():
                         help="Show the plan but don't execute")
     parser.add_argument("--bdd", default="BDD.md",
                         help="Path to BDD.md")
+    parser.add_argument("--model", default=None,
+                        help="Override model for the orchestrator planning call")
+    parser.add_argument("--provider", default=None,
+                        help="Force provider: anthropic|openai|groq|ollama|moonshot|dashscope|custom")
     args = parser.parse_args()
 
     config = get_config()
     orch_config = config.get("orchestration", {})
     max_agents = args.max_agents or orch_config.get("max_parallel_agents", 3)
-    model_orch = orch_config.get("model_orchestrator", "claude-haiku-4-5-20251001")
+
+    provider = args.provider or detect_provider()
+    # model_orch from poppins.yml is the default; --model overrides it
+    model_orch_default = orch_config.get("model_orchestrator", None)
+    model_orch_override = args.model or model_orch_default
 
     main_dir = os.getcwd()
     date = time.strftime("%Y-%m-%d")
@@ -396,7 +498,8 @@ def main():
 
     print(f"=== BAADD Orchestrator ({date} {session_time}) ===", flush=True)
     print(f"  Max parallel agents: {max_agents}", flush=True)
-    print(f"  Orchestrator model:  {model_orch}", flush=True)
+    print(f"  Provider:            {provider or 'none (will use BDD.md order)'}", flush=True)
+    print(f"  Orchestrator model:  {model_orch_override or 'provider default'}", flush=True)
     print("", flush=True)
 
     # Step 1: Find uncovered scenarios
@@ -413,7 +516,7 @@ def main():
     # Step 2: AI-powered ordering
     print("  Ordering scenarios...", flush=True)
     bdd_content = read_file_safe(args.bdd)
-    ordered_names = plan_scenario_order(uncovered, bdd_content, model_orch)
+    ordered_names = plan_scenario_order(uncovered, bdd_content, provider, model_orch_override)
     print(f"  Execution order:", flush=True)
     for i, name in enumerate(ordered_names, 1):
         print(f"    {i}. {name}", flush=True)
