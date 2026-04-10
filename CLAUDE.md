@@ -41,14 +41,14 @@ When the user asks to "evolve", "run an evolution session", or "implement the ne
 3. Run `python3 scripts/check_bdd_coverage.py BDD.md` to see current coverage
 4. **Claim a scenario lock** — multiple Claude Code instances may run in parallel, so before picking a scenario:
    - `mkdir -p locks`
+   - Generate a unique session token: `python3 -c "import uuid; print(uuid.uuid4())"` — keep this for the whole session
    - For each uncovered/failing scenario (highest priority first):
      - Derive a slug: lowercase, non-alphanumeric chars replaced with `-`, max 60 chars
      - Check if `locks/<slug>.lock` exists
-     - If it exists, read the `PID=` line and run `kill -0 <pid>` to test liveness. If the process is dead, delete the stale lock and claim this scenario. If alive, skip to the next scenario.
-     - If no lock exists, write `locks/<slug>.lock` with contents: `PID=<your pid>`, `SCENARIO=<name>`, `DATE=<YYYY-MM-DD HH:MM>`
+     - If it exists, check its age: `python3 -c "import os,time; age=time.time()-os.path.getmtime('locks/<slug>.lock'); print('stale' if age>3600 else 'live')"`. If stale (older than 60 minutes), delete it and claim this scenario. If live, skip to the next scenario.
+     - If no lock exists (or was just cleared), write `locks/<slug>.lock` with: `TOKEN=<session-uuid>`, `SCENARIO=<name>`, `DATE=<YYYY-MM-DD HH:MM>`
      - Break — this is your scenario for the session
-   - If all uncovered scenarios are locked by live processes, tell the user and stop.
-   - Your PID in a bash subshell: `bash -c 'echo $PPID'`
+   - If all uncovered scenarios have live locks, tell the user and stop.
 5. Write the test first — name it after the scenario — confirm it fails
 6. Write the minimum code to make it pass
 7. Run build and tests: check the commands from BDD.md frontmatter
