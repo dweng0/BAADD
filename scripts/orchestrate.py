@@ -188,17 +188,11 @@ def resolve_model_and_client(provider, model_override=None):
         base_url = host.rstrip("/") + "/v1"
         api_key = "ollama"
         model = (
-            model_override
-            or os.environ.get("MODEL")
-            or os.environ.get("CUSTOM_MODEL", "llama3.2")
+            model_override or os.environ.get("MODEL") or os.environ.get("CUSTOM_MODEL", "llama3.2")
         )
     elif provider == "custom":
         base_url = os.environ.get("CUSTOM_BASE_URL")
-        model = (
-            model_override
-            or os.environ.get("MODEL")
-            or os.environ.get("CUSTOM_MODEL", "")
-        )
+        model = model_override or os.environ.get("MODEL") or os.environ.get("CUSTOM_MODEL", "")
         if not api_key:
             api_key = "custom"
 
@@ -300,9 +294,7 @@ def remove_worktree(wt_path, branch, main_dir):
 def run_worker(scenario_name, wt_path, branch, main_dir, config):
     """Run a single agent worker for one scenario. Returns a result dict."""
     agent_config = config.get("agent", {})
-    model = os.environ.get(
-        "MODEL", agent_config.get("default_model", "claude-haiku-4-5-20251001")
-    )
+    model = os.environ.get("MODEL", agent_config.get("default_model", "claude-haiku-4-5-20251001"))
     provider = agent_config.get("provider")
     timeout = agent_config.get("session_timeout", 3600)
 
@@ -369,9 +361,7 @@ Now begin. Read IDENTITY.md first, then BDD.md.
 """
 
     # Write prompt to temp file
-    prompt_file = (
-        f"/tmp/baadd-prompt-{scenario_to_slug(scenario_name)}-{os.getpid()}.txt"
-    )
+    prompt_file = f"/tmp/baadd-prompt-{scenario_to_slug(scenario_name)}-{os.getpid()}.txt"
     with open(prompt_file, "w") as f:
         f.write(prompt)
 
@@ -461,11 +451,11 @@ def merge_worker_result(result, main_dir):
     session_time = time.strftime("%H:%M")
 
     if result["commits"] == 0:
-        print(f"    No commits — skipping merge", flush=True)
+        print(f"    → THROWN AWAY (no commits — agent made no progress)", flush=True)
         return False
 
     if not result["tests_pass"]:
-        print(f"    Tests failing — merging anyway", flush=True)
+        print(f"    Tests failing in worktree — merging anyway", flush=True)
 
     # Merge
     merge_msg = f"{date} {session_time}: merge scenario '{scenario}'"
@@ -487,14 +477,12 @@ def merge_worker_result(result, main_dir):
             timeout=15,
         )
         if rc != 0:
-            print(f"    Merge failed — aborting", flush=True)
+            print(f"    → THROWN AWAY (merge conflict could not be resolved)", flush=True)
             run_cmd("git merge --abort", cwd=main_dir)
             return False
 
     # Post-merge verification
-    stdout_bdd, _, _ = run_cmd(
-        "python3 scripts/parse_bdd_config.py BDD.md", cwd=main_dir
-    )
+    stdout_bdd, _, _ = run_cmd("python3 scripts/parse_bdd_config.py BDD.md", cwd=main_dir)
     _, _, build_rc = run_cmd(
         f'eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$BUILD_CMD"',
         cwd=main_dir,
@@ -507,7 +495,7 @@ def merge_worker_result(result, main_dir):
     )
 
     if build_rc != 0 or test_rc != 0:
-        print(f"    Post-merge verification FAILED — keeping merge anyway", flush=True)
+        print(f"    Post-merge verification FAILED — keeping merge (investigate manually)", flush=True)
 
     # Fold JOURNAL_ENTRY.md into JOURNAL.md if present
     journal_entry = os.path.join(main_dir, "JOURNAL_ENTRY.md")
@@ -518,9 +506,7 @@ def merge_worker_result(result, main_dir):
             journal_content = read_file_safe(journal_md)
             if journal_content:
                 lines = journal_content.splitlines(True)
-                new_content = (
-                    lines[0] + "\n" + entry_content + "\n" + "".join(lines[1:])
-                )
+                new_content = lines[0] + "\n" + entry_content + "\n" + "".join(lines[1:])
             else:
                 new_content = "# Journal\n\n" + entry_content
             with open(journal_md, "w") as f:
@@ -530,7 +516,8 @@ def merge_worker_result(result, main_dir):
             cwd=main_dir,
         )
 
-    print(f"    Merged successfully", flush=True)
+    verdict = "MERGED (tests failed — investigate)" if (not result["tests_pass"] or build_rc != 0 or test_rc != 0) else "MERGED"
+    print(f"    → {verdict}", flush=True)
     return True
 
 
@@ -542,9 +529,7 @@ def main():
         default=None,
         help="Override max parallel agents from poppins.yml",
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show the plan but don't execute"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Show the plan but don't execute")
     parser.add_argument("--bdd", default="BDD.md", help="Path to BDD.md")
     parser.add_argument(
         "--model",
@@ -631,9 +616,7 @@ def main():
     # Step 2: AI-powered ordering
     print("  Ordering scenarios...", flush=True)
     bdd_content = read_file_safe(args.bdd)
-    ordered_names = plan_scenario_order(
-        uncovered, bdd_content, provider, model_orch_override
-    )
+    ordered_names = plan_scenario_order(uncovered, bdd_content, provider, model_orch_override)
     print(f"  Execution order:", flush=True)
     for i, name in enumerate(ordered_names, 1):
         print(f"    {i}. {name}", flush=True)
@@ -662,9 +645,7 @@ def main():
         slug = scenario_to_slug(scenario_name)
         wt_path, branch = create_worktree(slug, main_dir)
         if not wt_path:
-            print(
-                f"  [WARN] Failed to create worktree for: {scenario_name}", flush=True
-            )
+            print(f"  [WARN] Failed to create worktree for: {scenario_name}", flush=True)
             continue
         workers[scenario_name] = (wt_path, branch)
         print(f"  {scenario_name[:50]} → {wt_path}", flush=True)
@@ -699,11 +680,16 @@ def main():
             try:
                 result = future.result()
                 results.append(result)
-                status = (
-                    "OK" if result["tests_pass"] and result["commits"] > 0 else "FAIL"
-                )
+                commits = result["commits"]
+                tests_pass = result["tests_pass"]
+                if commits == 0:
+                    status_str = "[FAIL: no commits]"
+                elif not tests_pass:
+                    status_str = "[WARN: tests failing]"
+                else:
+                    status_str = "[OK]"
                 print(
-                    f"  [{status}] {scenario_name} — {result['commits']} commit(s), {result['elapsed_s']}s",
+                    f"  {status_str} {scenario_name} — {commits} commit(s), {result['elapsed_s']}s",
                     flush=True,
                 )
             except Exception as e:
@@ -725,7 +711,9 @@ def main():
     print(f"\n  Merging {len(results)} results in order...", flush=True)
     for result in sorted(results, key=lambda r: selected_names.index(r["scenario"])):
         scenario = result["scenario"]
-        print(f"  [{scenario[:50]}]", flush=True)
+        commits = result["commits"]
+        tests = "tests pass" if result["tests_pass"] else "tests failing"
+        print(f"  [{scenario[:50]}] — {commits} commit(s), {tests}", flush=True)
         merged = merge_worker_result(result, main_dir)
         result["merged"] = merged
 
@@ -736,9 +724,7 @@ def main():
 
     # Step 5: Final wrap-up
     print("  Updating coverage...", flush=True)
-    run_cmd(
-        "python3 scripts/check_bdd_coverage.py BDD.md > BDD_STATUS.md", cwd=main_dir
-    )
+    run_cmd("python3 scripts/check_bdd_coverage.py BDD.md > BDD_STATUS.md", cwd=main_dir)
     run_cmd(
         'git add -A && git diff --cached --quiet || git commit -m "'
         + f'{date} {session_time}: orchestrator wrap-up"',
@@ -754,9 +740,23 @@ def main():
 
     print(f"\n=== Orchestrator complete ===", flush=True)
     print(f"  Scenarios attempted: {len(results)}", flush=True)
-    print(f"  Merged successfully: {merged_count}", flush=True)
-    print(f"  Failed/skipped:     {failed_count}", flush=True)
+    print(f"  Merged:             {merged_count}", flush=True)
+    print(f"  Thrown away:        {failed_count}", flush=True)
     print(f"  Total agent time:   {total_time}s", flush=True)
+    print(f"", flush=True)
+    col = 42
+    print(f"  {'Scenario':<{col}} {'Commits':>7}  {'Tests':>6}  Outcome", flush=True)
+    print(f"  {'-'*col}  {'-'*7}  {'-'*6}  {'-'*30}", flush=True)
+    for r in sorted(results, key=lambda r: selected_names.index(r["scenario"])):
+        commits = r["commits"]
+        tests = "pass" if r["tests_pass"] else ("—" if commits == 0 else "FAIL")
+        if r.get("merged"):
+            outcome = "MERGED" if r["tests_pass"] else "MERGED (tests failed — investigate)"
+        elif commits == 0:
+            outcome = "THROWN AWAY (no commits)"
+        else:
+            outcome = "THROWN AWAY (merge failed)"
+        print(f"  {r['scenario'][:col]:<{col}}  {commits:>7}  {tests:>6}  {outcome}", flush=True)
     print(f"=============================", flush=True)
 
     if deferred:
@@ -791,6 +791,65 @@ def main():
             )
             + "\n"
         )
+
+    # Write orchestrator journal entry
+    merged_names = [r["scenario"] for r in results if r.get("merged")]
+    failed_names = [r["scenario"] for r in results if not r.get("merged")]
+    coverage_out, _, _ = run_cmd("python3 scripts/check_bdd_coverage.py BDD.md", cwd=main_dir)
+    covered_count = len([l for l in coverage_out.splitlines() if "[x]" in l])
+    total_count = len([l for l in coverage_out.splitlines() if "- [" in l])
+
+    journal_md = os.path.join(main_dir, "JOURNAL.md")
+    journal_content = read_file_safe(journal_md)
+    orchestrator_entry = f"\n## {date} {session_time} — Orchestrator session\n\n"
+    orchestrator_entry += f"Ran {len(results)} agents in parallel (max {max_agents} concurrent). "
+    orchestrator_entry += f"Total agent time: {total_time}s.\n\n"
+    if merged_names:
+        orchestrator_entry += f"**Merged ({merged_count}):** {', '.join(merged_names[:5])}"
+        if len(merged_names) > 5:
+            orchestrator_entry += f", and {len(merged_names) - 5} more"
+        orchestrator_entry += "\n"
+    if failed_names:
+        orchestrator_entry += f"**Failed ({failed_count}):** {', '.join(failed_names[:5])}"
+        if len(failed_names) > 5:
+            orchestrator_entry += f", and {len(failed_names) - 5} more"
+        orchestrator_entry += "\n"
+    orchestrator_entry += f"\nCoverage: {covered_count}/{total_count} scenarios.\n"
+
+    if journal_content:
+        lines = journal_content.splitlines(True)
+        new_journal = lines[0] + "\n" + orchestrator_entry + "".join(lines[1:])
+    else:
+        new_journal = "# Journal\n\n" + orchestrator_entry
+    with open(journal_md, "w") as f:
+        f.write(new_journal)
+    run_cmd(
+        f"git add JOURNAL.md && git commit -m '{date} {session_time}: orchestrator journal'",
+        cwd=main_dir,
+    )
+
+    # Update JOURNAL_INDEX.md
+    journal_index = os.path.join(main_dir, "JOURNAL_INDEX.md")
+    index_content = read_file_safe(journal_index)
+    session_summary = f"orchestrator: {merged_count} merged, {failed_count} failed"
+    if not index_content:
+        index_content = "# Journal Index\n\n| Date | Time | Coverage | Summary |\n|------|------|----------|--------|\n"
+    index_lines = index_content.splitlines()
+    if "| Date |" not in index_content:
+        index_lines = [
+            "# Journal Index",
+            "",
+            "| Date | Time | Coverage | Summary |",
+            "|------|------|----------|--------|",
+        ]
+    new_row = f"| {date} | {session_time} | {covered_count}/{total_count} | {session_summary} |\n"
+    index_content = "\n".join(index_lines) + "\n" + new_row
+    with open(journal_index, "w") as f:
+        f.write(index_content)
+    run_cmd(
+        f"git add JOURNAL_INDEX.md && git commit -m '{date} {session_time}: update journal index'",
+        cwd=main_dir,
+    )
 
 
 if __name__ == "__main__":
