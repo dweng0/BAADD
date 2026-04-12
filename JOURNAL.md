@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-12 11:56 — Orchestrator session
+
+Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 1271s.
+
+**Failed (3):** Handle missing frontmatter gracefully, Parse YAML frontmatter from BDD.md, Parse scenario outline syntax
+
+Coverage: 45/221 scenarios.
+
+
 ## 2026-04-12 11:53 — Orchestrator session
 
 Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 3s.
