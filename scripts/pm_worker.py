@@ -35,10 +35,35 @@ TIMEOUT_PM_ACCEPT = 240
 
 MAX_RETRIES = 3
 
+# Existing files the SE must never modify. Any git-tracked path that matches
+# one of these prefixes is protected — violation causes immediate reset + retry.
+PROTECTED_PATHS = [
+    "scripts/",
+    ".github/",
+    "IDENTITY.md",
+    "BDD.md",
+    "conftest.py",
+]
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def check_se_protected_files(wt_path):
+    """Return list of protected files the SE modified. Empty = clean."""
+    diff_out, _, _ = run_cmd(
+        "git diff --name-only HEAD 2>/dev/null", cwd=wt_path, timeout=10
+    )
+    modified = [f.strip() for f in diff_out.splitlines() if f.strip()]
+    violations = []
+    for path in modified:
+        for protected in PROTECTED_PATHS:
+            if path == protected or path.startswith(protected):
+                violations.append(path)
+                break
+    return violations
+
 
 def run_cmd(cmd, cwd=None, timeout=30):
     """Run a shell command. Returns (stdout, stderr, returncode)."""
@@ -688,6 +713,25 @@ def run_pm_pipeline(scenario_name, scenario_text, wt_path, branch, main_dir, con
         )
         all_stdout.append(stdout)
         log(f"SE done  rc={rc}  {phase_elapsed}s  total={elapsed()}")
+
+        # Hard guard: reject immediately if SE touched protected files
+        violations = check_se_protected_files(wt_path)
+        if violations:
+            log(f"HARD REJECT: SE modified protected file(s): {violations}")
+            log(f"Resetting and writing RETRY_NOTES before next attempt")
+            run_cmd("git checkout -- . 2>&1", cwd=wt_path)
+            retry_notes = (
+                "# Retry Notes\n\n"
+                "The SE modified files that are strictly off-limits:\n\n"
+                + "".join(f"- `{v}`\n" for v in violations)
+                + "\nDo NOT touch any file under `scripts/`, `.github/`, "
+                "`IDENTITY.md`, `BDD.md`, or `conftest.py`.\n"
+                "These are shared infrastructure — they must never be rewritten.\n"
+                "Only create or edit files under `src/`, `tests/`, or `tools/`.\n"
+            )
+            with open(os.path.join(wt_path, "RETRY_NOTES.md"), "w") as f:
+                f.write(retry_notes)
+            continue
 
         # Quick marker pre-check so we can warn early without waiting for tester
         marker_out, _, _ = run_cmd(
