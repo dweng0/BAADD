@@ -1,5 +1,14 @@
 # Journal
 
+
+## 2026-04-12 14:12 — Orchestrator session
+
+Ran 1 agents across 1 round(s) (max 1 concurrent per round). Total agent time: 216s.
+
+**Merged (1):** Detect coverage via heuristic name matching
+
+Coverage: 52/221 scenarios.
+
 ## 2026-04-12 14:13 — Detect coverage via heuristic name matching
 
 The PM designed a mechanism to determine test coverage by comparing unit function names against BDD scenario descriptions using substring heuristics. The SE implemented this logic in the `detect_heuristic_match` function within `scripts/coverage_checker.py`. QA confirmed that the implementation successfully meets all acceptance criteria, passing design compliance checks and achieving full required coverage.
