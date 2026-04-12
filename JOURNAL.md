@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-12 19:27 — Orchestrator session
+
+Ran 2 agents across 1 round(s) (max 2 concurrent per round). Total agent time: 1281s.
+
+**Failed (2):** List files excludes git and node_modules, Read file that does not exist
+
+Coverage: 60/221 scenarios.
+
+
 ## 2026-04-12 15:41 — Orchestrator session
 
 Ran 30 agents across 5 round(s) (max 6 concurrent per round). Total agent time: 60s.
