@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-<<<<<<< HEAD
 """Tests for agent.py provider detection"""
 
 import os
@@ -37,7 +36,6 @@ def test_detect_anthropic_provider_from_api_key():
             os.environ["ANTHROPIC_API_KEY"] = original_anthropic_key
         else:
             os.environ.pop("ANTHROPIC_API_KEY", None)
-=======
 """Tests for agent.py - multi-provider AI agent"""
 
 import os
@@ -106,4 +104,3 @@ print(result)
         
         assert result.returncode == 0, f"Script failed: {result.stderr}"
         assert result.stdout.strip() == "groq", f"Expected 'groq', got '{result.stdout.strip()}'"
->>>>>>> agent/detect-groq-provider-from-api-key-20260412-100308
