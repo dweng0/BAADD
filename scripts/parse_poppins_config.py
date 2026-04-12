@@ -19,7 +19,6 @@ Falls back to built-in defaults if the file is missing.
 import sys
 import os
 import json
-import re
 
 DEFAULTS = {
     "orchestration": {

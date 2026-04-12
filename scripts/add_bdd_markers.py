@@ -26,7 +26,6 @@ from check_bdd_coverage import (
     normalize,
     normalize_partial,
     check_marker,
-    EXCLUDE_DIRS,
 )
 
 # Comment prefix by file extension
@@ -202,7 +201,7 @@ def main():
     print(f"No test found:  {skipped_no_match}")
 
     if not apply_changes and added > 0:
-        print(f"\nRe-run with --apply to modify files:")
+        print("\nRe-run with --apply to modify files:")
         print(f"  python3 scripts/add_bdd_markers.py {bdd_path} --apply")
 
 

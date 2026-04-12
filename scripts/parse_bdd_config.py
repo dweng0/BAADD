@@ -10,7 +10,6 @@ Outputs variables:
 """
 
 import sys
-import re
 
 DEFAULTS = {
     "language": "unknown",

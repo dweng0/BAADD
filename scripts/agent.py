@@ -635,7 +635,7 @@ def print_tool_call(name, input_data, result, iteration=None, max_iterations=Non
         else:
             print(f"\033[32m    {r}\033[0m", flush=True)
     elif name == "write_file":
-        print(f"\033[32m    Written\033[0m", flush=True)
+        print("\033[32m    Written\033[0m", flush=True)
 
 
 def make_wrap_up_message(iteration, max_iterations, mode):
