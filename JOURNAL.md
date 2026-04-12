@@ -1,5 +1,14 @@
 # Journal
 
+
+## 2026-04-12 09:17 — Orchestrator session
+
+Ran 12 agents across 3 round(s) (max 4 concurrent per round). Total agent time: 1612s.
+
+**Merged (12):** Deep merge file config with defaults, Search parent directories for poppins.yml, Apply defaults when poppins.yml missing, Parse poppins.yml with agent section, Load .env file into environment, and 7 more
+
+Coverage: 30/221 scenarios.
+
 ## 2026-04-12 09:32 — Handle empty BDD.md with no scenarios
 
 Covered the scenario "Handle empty BDD.md with no scenarios" by writing a test in `tests/test_check_bdd_coverage.py`. The test creates a temporary BDD.md file with YAML frontmatter but no Feature or Scenario sections, runs `check_bdd_coverage.py` on it, and verifies it outputs "No scenarios found in BDD.md" and exits with code 0. The implementation already existed in the main script, so the test passed immediately. All 15 tests pass and the build succeeds.
