@@ -9,12 +9,12 @@ Checked 217 scenario(s) across 2 test file(s).
 - [x] Handle missing frontmatter gracefully
 - [x] Parse frontmatter with quoted values
 - [x] Extract all scenarios from BDD.md
-- [ ] UNCOVERED: Parse scenario outline syntax
+- [x] Parse scenario outline syntax
 - [ ] UNCOVERED: Skip frontmatter when parsing scenarios
 
 ## Feature: Test Coverage Detection
 
-- [ ] UNCOVERED: Find test files in project
+- [x] Find test files in project
 - [ ] UNCOVERED: Exclude non-source directories from test search
 - [ ] UNCOVERED: Detect coverage via BDD marker comment
 - [ ] UNCOVERED: Detect coverage via marker with different comment style
@@ -207,7 +207,7 @@ Checked 217 scenario(s) across 2 test file(s).
 
 - [ ] UNCOVERED: Detect comment prefix by file extension
 - [ ] UNCOVERED: Detect JavaScript comment prefix
-- [ ] UNCOVERED: Find test line matching scenario
+- [x] Find test line matching scenario
 - [ ] UNCOVERED: Insert marker above test function
 - [ ] UNCOVERED: Skip if marker already exists
 - [ ] UNCOVERED: Dry run mode shows planned changes
@@ -287,12 +287,10 @@ Checked 217 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Issue response file format parsing
 
 ---
-**6/217 scenarios covered.**
+**9/217 scenarios covered.**
 
-211 scenario(s) need tests:
-- Parse scenario outline syntax
+208 scenario(s) need tests:
 - Skip frontmatter when parsing scenarios
-- Find test files in project
 - Exclude non-source directories from test search
 - Detect coverage via BDD marker comment
 - Detect coverage via marker with different comment style
@@ -440,7 +438,6 @@ Checked 217 scenario(s) across 2 test file(s).
 - Skip unknown language gracefully
 - Detect comment prefix by file extension
 - Detect JavaScript comment prefix
-- Find test line matching scenario
 - Insert marker above test function
 - Skip if marker already exists
 - Dry run mode shows planned changes
