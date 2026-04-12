@@ -1,2 +1,0 @@
-## 2026-04-12 14:42 — Override model via MODEL environment variable
-The project design called for implementing a mechanism to override the LLM model using the `MODEL` environment variable within `agent/model_resolver.py`. The SE built this functionality, and the tester confirmed that all acceptance criteria were met, including successful BDD marker placement, full coverage, and compliance with the original design specification.
