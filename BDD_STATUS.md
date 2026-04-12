@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 221 scenario(s) across 9 test file(s).
+Checked 221 scenario(s) across 10 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -18,7 +18,7 @@ Checked 221 scenario(s) across 9 test file(s).
 - [x] Exclude non-source directories from test search
 - [x] Detect coverage via BDD marker comment
 - [x] Detect coverage via marker with different comment style
-- [ ] UNCOVERED: Detect coverage via heuristic name matching
+- [x] Detect coverage via heuristic name matching
 - [ ] UNCOVERED: Detect coverage via partial name matching
 - [ ] UNCOVERED: Report uncovered scenarios
 - [ ] UNCOVERED: Exit with error code when scenarios uncovered
@@ -291,10 +291,9 @@ Checked 221 scenario(s) across 9 test file(s).
 - [ ] UNCOVERED: Issue response file format parsing
 
 ---
-**51/221 scenarios covered.**
+**52/221 scenarios covered.**
 
-170 scenario(s) need tests:
-- Detect coverage via heuristic name matching
+169 scenario(s) need tests:
 - Detect coverage via partial name matching
 - Report uncovered scenarios
 - Exit with error code when scenarios uncovered

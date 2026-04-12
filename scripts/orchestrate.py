@@ -27,6 +27,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse_poppins_config import get_config
 from check_bdd_coverage import parse_scenarios, find_test_files, check_coverage
+from pm_worker import run_pm_pipeline, extract_scenario_block
 
 
 def load_dotenv(path=".env"):
@@ -749,7 +750,8 @@ def main():
                     f"  [WARN] Failed to create worktree for: {scenario_name}", flush=True
                 )
                 continue
-            workers[scenario_name] = (wt_path, branch)
+            scenario_text = extract_scenario_block(bdd_content, scenario_name)
+            workers[scenario_name] = (wt_path, branch, scenario_text)
             print(f"  {scenario_name[:50]} → {wt_path}", flush=True)
 
         if not workers:
@@ -765,10 +767,11 @@ def main():
 
         with ThreadPoolExecutor(max_workers=max_agents) as executor:
             futures = {}
-            for scenario_name, (wt_path, branch) in workers.items():
+            for scenario_name, (wt_path, branch, scenario_text) in workers.items():
                 future = executor.submit(
-                    run_worker,
+                    run_pm_pipeline,
                     scenario_name,
+                    scenario_text,
                     wt_path,
                     branch,
                     main_dir,
@@ -795,13 +798,15 @@ def main():
                     )
                 except Exception as e:
                     print(f"  [ERROR] {scenario_name}: {e}", flush=True)
+                    wt_path, branch, _ = workers[scenario_name]
                     results.append(
                         {
                             "scenario": scenario_name,
-                            "branch": workers[scenario_name][1],
-                            "wt_path": workers[scenario_name][0],
+                            "branch": branch,
+                            "wt_path": wt_path,
                             "commits": 0,
                             "tests_pass": False,
+                            "has_marker": False,
                             "elapsed_s": 0,
                             "rc": 1,
                             "stdout": str(e),
@@ -820,7 +825,7 @@ def main():
 
         # Clean up worktrees for this round
         print(f"\n  Cleaning up {len(workers)} worktrees...", flush=True)
-        for scenario_name, (wt_path, branch) in workers.items():
+        for scenario_name, (wt_path, branch, _scenario_text) in workers.items():
             remove_worktree(wt_path, branch, main_dir)
 
         all_results.extend(results)
