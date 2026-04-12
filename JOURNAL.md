@@ -1,5 +1,8 @@
 # Journal
 
+## 2026-04-12 15:03 — Custom event log path via --event-log
+The design specified implementing a custom event log path feature using the `--event-log` CLI flag, relying on dependency injection for logger initialization and path parsing. The SE successfully implemented this logic according to the plan. QA confirmed that all acceptance criteria passed, including BDD marker presence, full test suite success, and adherence to the original design specifications.
+
 ## 2026-04-12 15:03 — Load skills from SKILL.md files
 The PM designed a `load_skills` unit to concatenate contents of multiple 'SKILL.md' files using dependency injection.
 The SE successfully implemented the functionality, creating `scripts/skill_loader.py` as planned.

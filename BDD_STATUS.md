@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 221 scenario(s) across 10 test file(s).
+Checked 221 scenario(s) across 16 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -18,13 +18,13 @@ Checked 221 scenario(s) across 10 test file(s).
 - [x] Exclude non-source directories from test search
 - [x] Detect coverage via BDD marker comment
 - [x] Detect coverage via marker with different comment style
-- [x] Detect coverage via heuristic name matching
-- [ ] UNCOVERED: Detect coverage via partial name matching
+- [ ] UNCOVERED: Detect coverage via heuristic name matching
+- [x] Detect coverage via partial name matching
 - [ ] UNCOVERED: Report uncovered scenarios
-- [ ] UNCOVERED: Exit with error code when scenarios uncovered
+- [x] Exit with error code when scenarios uncovered
 - [x] Exit with success when all scenarios covered
 - [x] Handle empty BDD.md with no scenarios
-- [ ] UNCOVERED: Handle BDD.md with only frontmatter
+- [x] Handle BDD.md with only frontmatter
 
 ## Feature: Multi-Provider AI Agent
 
@@ -35,21 +35,21 @@ Checked 221 scenario(s) across 10 test file(s).
 - [x] Detect custom provider from base URL
 - [ ] UNCOVERED: Provider priority order
 - [x] Use provider default model
-- [ ] UNCOVERED: Override model via MODEL environment variable
+- [x] Override model via MODEL environment variable
 - [x] Load provider config from poppins.yml
 - [x] Environment variables override poppins.yml config
 - [x] Set OLLAMA_HOST from poppins.yml base_url
 - [ ] UNCOVERED: No provider detected error message
 - [ ] UNCOVERED: CUSTOM_MODEL required for custom provider without --model
-- [ ] UNCOVERED: Unknown provider error
+- [x] Unknown provider error
 - [x] Override provider via --provider flag
 - [ ] UNCOVERED: Missing anthropic package error
-- [ ] UNCOVERED: Missing openai package error
+- [x] Missing openai package error
 - [ ] UNCOVERED: Empty stdin prompt error
-- [ ] UNCOVERED: Load skills from SKILL.md files
+- [x] Load skills from SKILL.md files
 - [ ] UNCOVERED: Skills appended to system prompt
 - [ ] UNCOVERED: Skip skills loading if directory missing
-- [ ] UNCOVERED: Custom event log path via --event-log
+- [x] Custom event log path via --event-log
 
 ## Feature: Agent Tool Execution
 
@@ -57,7 +57,7 @@ Checked 221 scenario(s) across 10 test file(s).
 - [ ] UNCOVERED: Run bash command with stderr
 - [ ] UNCOVERED: Bash command timeout after 300 seconds
 - [x] Read file that exists
-- [ ] UNCOVERED: Read file that does not exist
+- [x] Read file that does not exist
 - [ ] UNCOVERED: Truncate long file output
 - [ ] UNCOVERED: Write file creates parent directories
 - [ ] UNCOVERED: Edit file replaces exact string
@@ -291,29 +291,21 @@ Checked 221 scenario(s) across 10 test file(s).
 - [ ] UNCOVERED: Issue response file format parsing
 
 ---
-**52/221 scenarios covered.**
+**60/221 scenarios covered.**
 
-169 scenario(s) need tests:
-- Detect coverage via partial name matching
+161 scenario(s) need tests:
+- Detect coverage via heuristic name matching
 - Report uncovered scenarios
-- Exit with error code when scenarios uncovered
-- Handle BDD.md with only frontmatter
 - Provider priority order
-- Override model via MODEL environment variable
 - No provider detected error message
 - CUSTOM_MODEL required for custom provider without --model
-- Unknown provider error
 - Missing anthropic package error
-- Missing openai package error
 - Empty stdin prompt error
-- Load skills from SKILL.md files
 - Skills appended to system prompt
 - Skip skills loading if directory missing
-- Custom event log path via --event-log
 - Run bash command and capture output
 - Run bash command with stderr
 - Bash command timeout after 300 seconds
-- Read file that does not exist
 - Truncate long file output
 - Write file creates parent directories
 - Edit file replaces exact string
