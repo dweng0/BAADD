@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 221 scenario(s) across 7 test file(s).
+Checked 221 scenario(s) across 9 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -10,7 +10,7 @@ Checked 221 scenario(s) across 7 test file(s).
 - [x] Parse frontmatter with quoted values
 - [x] Extract all scenarios from BDD.md
 - [x] Parse scenario outline syntax
-- [ ] UNCOVERED: Skip frontmatter when parsing scenarios
+- [x] Skip frontmatter when parsing scenarios
 
 ## Feature: Test Coverage Detection
 
@@ -153,8 +153,8 @@ Checked 221 scenario(s) across 7 test file(s).
 
 ## Feature: Scenario Locking for Parallel Execution
 
-- [ ] UNCOVERED: Generate scenario slug from name
-- [ ] UNCOVERED: Slug truncates to 60 characters
+- [x] Generate scenario slug from name
+- [x] Slug truncates to 60 characters
 - [ ] UNCOVERED: Check for existing lock file
 - [ ] UNCOVERED: Detect stale lock from dead PID
 - [ ] UNCOVERED: Write lock file with session metadata
@@ -291,10 +291,9 @@ Checked 221 scenario(s) across 7 test file(s).
 - [ ] UNCOVERED: Issue response file format parsing
 
 ---
-**42/221 scenarios covered.**
+**45/221 scenarios covered.**
 
-179 scenario(s) need tests:
-- Skip frontmatter when parsing scenarios
+176 scenario(s) need tests:
 - Exclude non-source directories from test search
 - Detect coverage via BDD marker comment
 - Detect coverage via marker with different comment style
@@ -381,8 +380,6 @@ Checked 221 scenario(s) across 7 test file(s).
 - Guard warning for minimal work with uncovered scenarios
 - Handle push failure gracefully
 - Handle missing git remote
-- Generate scenario slug from name
-- Slug truncates to 60 characters
 - Check for existing lock file
 - Detect stale lock from dead PID
 - Write lock file with session metadata
