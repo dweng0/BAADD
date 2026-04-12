@@ -726,6 +726,24 @@ def main():
     )
     print("", flush=True)
 
+    # Pre-flight: verify existing tests pass before starting (skip in dry-run)
+    if not args.dry_run:
+        print("  Pre-flight: running test suite...", flush=True)
+        _, _, preflight_rc = run_cmd(
+            'eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$TEST_CMD"',
+            cwd=main_dir,
+            timeout=120,
+        )
+        if preflight_rc != 0:
+            print("", flush=True)
+            print("ERROR: existing tests are failing — pipeline cannot run.", flush=True)
+            print("Fix the failing tests on main before starting a cycle.", flush=True)
+            print("", flush=True)
+            print("  Run:  python3 -m pytest tests/ -v --tb=short", flush=True)
+            sys.exit(1)
+        print("  Pre-flight: OK", flush=True)
+        print("", flush=True)
+
     # Step 1: Find uncovered scenarios
     uncovered = get_uncovered_scenarios(args.bdd)
     if not uncovered:
