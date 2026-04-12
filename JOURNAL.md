@@ -1,5 +1,15 @@
 # Journal
 
+
+## 2026-04-12 13:29 — Orchestrator session
+
+Ran 2 agents across 1 round(s) (max 2 concurrent per round). Total agent time: 410s.
+
+**Merged (1):** Detect coverage via heuristic name matching
+**Failed (1):** Detect coverage via partial name matching
+
+Coverage: 51/221 scenarios.
+
 ## 2026-04-12 13:30 — Detect coverage via heuristic name matching
 Implemented the fallback heuristic in `check_bdd_coverage.py` to detect test coverage when an explicit BDD marker is missing. The new logic scans for test function definitions (e.g., `test_...`) and checks if the normalized scenario name appears as a substring or partial match within the function name, successfully covering the target scenario.
 
