@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-12 11:34 — Orchestrator session
+
+Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 13s.
+
+**Failed (3):** Detect coverage via BDD marker comment, Exclude non-source directories from test search, Detect coverage via marker with different comment style
+
+Coverage: 45/221 scenarios.
+
+
 ## 2026-04-12 10:54 — Orchestrator session
 
 Ran 15 agents across 3 round(s) (max 5 concurrent per round). Total agent time: 962s.
