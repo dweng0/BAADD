@@ -1,17 +1,20 @@
+# PLAN.md
+
 ## 1. Units
 
-*   **Name:** `detect_heuristic_match(test_function_name: str, scenario_name: str) -> bool`
-    *   **File:** `scripts/coverage_checker.py`
-    *   **Description:** Compares a test function name against a BDD scenario name using heuristic substring matching after normalizing both strings.
-    *   **Dependency injection point:** None (operates on string inputs).
+### Unit: is_partial_word_match
+*   **Signature:** `is_partial_word_match(test_name: str, scenario_description: str) -> bool`
+*   **File:** `scripts/coverage_checker.py`
+*   **Description:** Checks if the test name partially matches any word in the scenario description by performing tokenized substring comparisons.
+*   **Dependency Injection Point:** None (inputs are direct parameters).
 
 ## 2. Test strategy
 
-*   **Test file path:** `tests/test_coverage_heuristics.py` (new test file)
-*   **Exact test function name:** `test_detect_heuristic_match_success`
-*   **BDD marker:** `# BDD: Detect coverage via heuristic name matching`
-*   **What the test injects:** Direct calls to the `detect_heuristic_match` unit with predefined strings.
-*   **What it asserts:** That calling `detect_heuristic_match("test_login_with_valid_credentials", "Login with valid credentials")` returns `True`.
+*   **Test file path:** `tests/test_coverage_detection.py`
+*   **Exact test function name:** `test_partial_name_matching_success`
+*   **BDD marker:** `# BDD: Detect coverage via partial name matching`
+*   **What the test injects:** The required input strings (the specific test name and scenario description).
+*   **What it asserts:** That `is_partial_word_match()` returns `True` given the specific inputs.
 
 ## 3. Acceptance criteria
 
@@ -23,5 +26,5 @@
 
 ## 4. Out of scope
 
-*   Implementing the full parsing logic for extracting function names from source files; this unit assumes the test function name string is already provided.
-*   Supporting partial word matching or complex regular expression comparisons (these are covered by separate BDD scenarios).
+*   The full integration with the coverage detection pipeline (i.e., how test names are gathered from the filesystem).
+*   The implementation of `check_coverage()` wrapper function; only the core matching logic within it is required.
