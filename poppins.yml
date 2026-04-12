@@ -18,7 +18,7 @@ orchestration:
   # Model used for the orchestrator's scenario ordering call
   #  model_orchestrator: qwen3.5-plus
 
-  model_orchestrator: openai/gpt-oss-20b
+  model_orchestrator: google/gemma-4-e4b
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
 
@@ -36,7 +36,7 @@ agent:
   # Default model (overridden by --model flag or MODEL env var)
   #  default_model: qwen3.5-plus
 
-  default_model: openai/gpt-oss-20b
+  default_model: google/gemma-4-e4b
 
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
