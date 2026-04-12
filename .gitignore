@@ -1,4 +1,9 @@
 ISSUE_RESPONSE.md
+RETRY_NOTES.md
+FAIL_STACK_TRACE.md
+QA_REPORT.md
+PLAN.md
+JOURNAL_ENTRY.md
 agent_events.jsonl
 orchestrator_events.jsonl
 locks/
