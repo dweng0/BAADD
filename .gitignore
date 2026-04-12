@@ -1,9 +1,12 @@
 ISSUE_RESPONSE.md
+ISSUES_TODAY.md
 RETRY_NOTES.md
 FAIL_STACK_TRACE.md
 QA_REPORT.md
 PLAN.md
 JOURNAL_ENTRY.md
+FAILED_PIPELINES.md
+agent_events_*.jsonl
 agent_events.jsonl
 orchestrator_events.jsonl
 locks/

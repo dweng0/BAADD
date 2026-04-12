@@ -1,1 +1,0 @@
-No community issues today.
