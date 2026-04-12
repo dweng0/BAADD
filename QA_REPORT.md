@@ -1,8 +1,8 @@
-# QA Report: Detect coverage via heuristic name matching
+# QA Report: Handle BDD.md with only frontmatter
 
 ## A. Marker check
 Status: PASS
-Detail: # BDD: Detect coverage via heuristic name matching (present immediately above test function)
+Detail: # BDD: Handle BDD.md with only frontmatter
 
 ## B. Test run
 Status: PASS
@@ -11,11 +11,11 @@ Detail: all passed
 
 ## C. Coverage check
 Status: PASS
-Detail: - [x] Detect coverage via heuristic name matching
+Detail: - [x] Handle BDD.md with only frontmatter
 
 ## D. Design compliance
 Status: PASS
-Detail: all units present as specified (detect_heuristic_match(test_function_name: str, scenario_name: str) -> bool) and dependency injection points are correctly implemented as string parameters.
+Detail: all units present as specified
 
 ## Overall
 PASS — all checks passed
