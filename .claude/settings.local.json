@@ -29,7 +29,8 @@
       "Bash(gh repo:*)",
       "Bash(gh api:*)",
       "Bash(python3:*)",
-      "Bash(chmod +x:*)"
+      "Bash(chmod +x:*)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
