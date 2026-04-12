@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 221 scenario(s) across 2 test file(s).
+Checked 221 scenario(s) across 4 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -22,8 +22,8 @@ Checked 221 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Detect coverage via partial name matching
 - [ ] UNCOVERED: Report uncovered scenarios
 - [ ] UNCOVERED: Exit with error code when scenarios uncovered
-- [ ] UNCOVERED: Exit with success when all scenarios covered
-- [ ] UNCOVERED: Handle empty BDD.md with no scenarios
+- [x] Exit with success when all scenarios covered
+- [x] Handle empty BDD.md with no scenarios
 - [ ] UNCOVERED: Handle BDD.md with only frontmatter
 
 ## Feature: Multi-Provider AI Agent
@@ -36,13 +36,13 @@ Checked 221 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Provider priority order
 - [x] Use provider default model
 - [ ] UNCOVERED: Override model via MODEL environment variable
-- [ ] UNCOVERED: Load provider config from poppins.yml
+- [x] Load provider config from poppins.yml
 - [ ] UNCOVERED: Environment variables override poppins.yml config
 - [ ] UNCOVERED: Set OLLAMA_HOST from poppins.yml base_url
 - [ ] UNCOVERED: No provider detected error message
 - [ ] UNCOVERED: CUSTOM_MODEL required for custom provider without --model
 - [ ] UNCOVERED: Unknown provider error
-- [ ] UNCOVERED: Override provider via --provider flag
+- [x] Override provider via --provider flag
 - [ ] UNCOVERED: Missing anthropic package error
 - [ ] UNCOVERED: Missing openai package error
 - [ ] UNCOVERED: Empty stdin prompt error
@@ -56,7 +56,7 @@ Checked 221 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Run bash command and capture output
 - [ ] UNCOVERED: Run bash command with stderr
 - [ ] UNCOVERED: Bash command timeout after 300 seconds
-- [ ] UNCOVERED: Read file that exists
+- [x] Read file that exists
 - [ ] UNCOVERED: Read file that does not exist
 - [ ] UNCOVERED: Truncate long file output
 - [ ] UNCOVERED: Write file creates parent directories
@@ -93,11 +93,11 @@ Checked 221 scenario(s) across 2 test file(s).
 ## Feature: Poppins Configuration Parser
 
 - [ ] UNCOVERED: Parse poppins.yml with agent section
-- [ ] UNCOVERED: Apply defaults when poppins.yml missing
+- [x] Apply defaults when poppins.yml missing
 - [ ] UNCOVERED: Deep merge file config with defaults
 - [x] Default max_rounds is 1
-- [ ] UNCOVERED: Get single config value via dot notation
-- [ ] UNCOVERED: Search parent directories for poppins.yml
+- [x] Get single config value via dot notation
+- [x] Search parent directories for poppins.yml
 
 ## Feature: GitHub Issue Trust Verification
 
@@ -128,7 +128,7 @@ Checked 221 scenario(s) across 2 test file(s).
 
 ## Feature: Evolution Script
 
-- [ ] UNCOVERED: Load BDD config before session
+- [x] Load BDD config before session
 - [ ] UNCOVERED: Check starting build state
 - [ ] UNCOVERED: Continue with failing tests
 - [ ] UNCOVERED: Exit if build broken at start
@@ -173,7 +173,7 @@ Checked 221 scenario(s) across 2 test file(s).
 
 ## Feature: Parallel Agent Orchestration
 
-- [ ] UNCOVERED: Find uncovered scenarios for orchestration
+- [x] Find uncovered scenarios for orchestration
 - [ ] UNCOVERED: AI-powered scenario ordering
 - [ ] UNCOVERED: Fallback to BDD.md order on AI failure
 - [ ] UNCOVERED: Select top N scenarios for parallel run
@@ -221,7 +221,7 @@ Checked 221 scenario(s) across 2 test file(s).
 
 - [ ] UNCOVERED: Load .env file into environment
 - [x] Handle quoted values in .env
-- [ ] UNCOVERED: Skip comment lines in .env
+- [x] Skip comment lines in .env
 - [ ] UNCOVERED: Environment variables override .env
 
 ## Feature: CI/CD Integration
@@ -273,7 +273,7 @@ Checked 221 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Timeout kills long session
 - [x] Handle missing gh CLI gracefully
 - [ ] UNCOVERED: Worktree creation failure
-- [ ] UNCOVERED: Handle test file that cannot be read
+- [x] Handle test file that cannot be read
 - [ ] UNCOVERED: Tool output formatting with iteration tag
 - [ ] UNCOVERED: Tool icons for different tool types
 - [ ] UNCOVERED: Detect Moonshot provider
@@ -291,9 +291,9 @@ Checked 221 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Issue response file format parsing
 
 ---
-**18/221 scenarios covered.**
+**30/221 scenarios covered.**
 
-203 scenario(s) need tests:
+191 scenario(s) need tests:
 - Skip frontmatter when parsing scenarios
 - Exclude non-source directories from test search
 - Detect coverage via BDD marker comment
@@ -302,8 +302,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Detect coverage via partial name matching
 - Report uncovered scenarios
 - Exit with error code when scenarios uncovered
-- Exit with success when all scenarios covered
-- Handle empty BDD.md with no scenarios
 - Handle BDD.md with only frontmatter
 - Detect Anthropic provider from API key
 - Detect OpenAI provider from API key
@@ -312,13 +310,11 @@ Checked 221 scenario(s) across 2 test file(s).
 - Detect custom provider from base URL
 - Provider priority order
 - Override model via MODEL environment variable
-- Load provider config from poppins.yml
 - Environment variables override poppins.yml config
 - Set OLLAMA_HOST from poppins.yml base_url
 - No provider detected error message
 - CUSTOM_MODEL required for custom provider without --model
 - Unknown provider error
-- Override provider via --provider flag
 - Missing anthropic package error
 - Missing openai package error
 - Empty stdin prompt error
@@ -329,7 +325,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Run bash command and capture output
 - Run bash command with stderr
 - Bash command timeout after 300 seconds
-- Read file that exists
 - Read file that does not exist
 - Truncate long file output
 - Write file creates parent directories
@@ -354,10 +349,7 @@ Checked 221 scenario(s) across 2 test file(s).
 - Log token usage per API response
 - Log session end with reason
 - Parse poppins.yml with agent section
-- Apply defaults when poppins.yml missing
 - Deep merge file config with defaults
-- Get single config value via dot notation
-- Search parent directories for poppins.yml
 - Trust repo owner's issues directly
 - Trust community issue with agent-approved label from owner
 - Reject community issue with agent-approved from non-owner
@@ -376,7 +368,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Create Day 0 journal entry
 - Write fallback journal if agent skips
 - Seed journal index on bootstrap
-- Load BDD config before session
 - Check starting build state
 - Continue with failing tests
 - Exit if build broken at start
@@ -412,7 +403,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Fold JOURNAL_ENTRY.md into JOURNAL.md
 - Clean up worktree after merge
 - Remove worktree on failure
-- Find uncovered scenarios for orchestration
 - AI-powered scenario ordering
 - Fallback to BDD.md order on AI failure
 - Select top N scenarios for parallel run
@@ -446,7 +436,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Dry run mode shows planned changes
 - Apply mode modifies files
 - Load .env file into environment
-- Skip comment lines in .env
 - Environment variables override .env
 - GitHub Actions workflow triggers on schedule
 - Manual workflow dispatch
@@ -485,7 +474,6 @@ Checked 221 scenario(s) across 2 test file(s).
 - Post-merge verification catches breakage
 - Timeout kills long session
 - Worktree creation failure
-- Handle test file that cannot be read
 - Tool output formatting with iteration tag
 - Tool icons for different tool types
 - Detect Moonshot provider
