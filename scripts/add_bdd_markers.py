@@ -26,7 +26,6 @@ from check_bdd_coverage import (
     normalize,
     normalize_partial,
     check_marker,
-    EXCLUDE_DIRS,
 )
 
 # Comment prefix by file extension
@@ -58,15 +57,15 @@ def find_test_line(content, scenario_name):
     # Look for test function/block definitions that match
     test_patterns = [
         # Python: def test_scenario_name
-        re.compile(r'^\s*def\s+test\w*', re.IGNORECASE),
+        re.compile(r"^\s*def\s+test\w*", re.IGNORECASE),
         # JS/TS: test('...', it('...', describe('...'
-        re.compile(r'^\s*(?:test|it|describe)\s*\(', re.IGNORECASE),
+        re.compile(r"^\s*(?:test|it|describe)\s*\(", re.IGNORECASE),
         # Go: func Test...
-        re.compile(r'^\s*func\s+Test', re.IGNORECASE),
+        re.compile(r"^\s*func\s+Test", re.IGNORECASE),
         # Rust: #[test] followed by fn
-        re.compile(r'^\s*fn\s+\w*test', re.IGNORECASE),
+        re.compile(r"^\s*fn\s+\w*test", re.IGNORECASE),
         # Java: @Test followed by method
-        re.compile(r'^\s*(?:@Test|public\s+void\s+test)', re.IGNORECASE),
+        re.compile(r"^\s*(?:@Test|public\s+void\s+test)", re.IGNORECASE),
     ]
 
     for i, line in enumerate(lines):
@@ -88,7 +87,11 @@ def find_test_line(content, scenario_name):
         context_end = min(len(lines), i + 3)
         context = " ".join(lines[context_start:context_end]).lower()
 
-        words = [w for w in re.sub(r"[^a-z0-9\s]", "", scenario_name.lower()).split() if len(w) > 3]
+        words = [
+            w
+            for w in re.sub(r"[^a-z0-9\s]", "", scenario_name.lower()).split()
+            if len(w) > 3
+        ]
         if len(words) >= 3 and all(w in context for w in words[:4]):
             return i, "words"
 
@@ -103,12 +106,16 @@ def add_marker_to_file(filepath, line_index, scenario_name, prefix):
     marker = f"{prefix} BDD: {scenario_name}\n"
 
     # Check if marker already exists on the line above
-    if line_index > 0 and "BDD:" in lines[line_index - 1] and scenario_name.lower() in lines[line_index - 1].lower():
+    if (
+        line_index > 0
+        and "BDD:" in lines[line_index - 1]
+        and scenario_name.lower() in lines[line_index - 1].lower()
+    ):
         return None  # Already has marker
 
     # Get the indentation of the test line
     indent = ""
-    match = re.match(r'^(\s*)', lines[line_index])
+    match = re.match(r"^(\s*)", lines[line_index])
     if match:
         indent = match.group(1)
 
@@ -178,7 +185,9 @@ def main():
         test_line_preview = lines[found_line].strip()[:80]
 
         if apply_changes:
-            new_content = add_marker_to_file(found_in, found_line, scenario_name, prefix)
+            new_content = add_marker_to_file(
+                found_in, found_line, scenario_name, prefix
+            )
             if new_content is None:
                 skipped_has_marker += 1
                 print(f"  [ok]   {scenario_name} — marker already exists")
@@ -202,7 +211,7 @@ def main():
     print(f"No test found:  {skipped_no_match}")
 
     if not apply_changes and added > 0:
-        print(f"\nRe-run with --apply to modify files:")
+        print("\nRe-run with --apply to modify files:")
         print(f"  python3 scripts/add_bdd_markers.py {bdd_path} --apply")
 
 

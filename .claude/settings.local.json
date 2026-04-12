@@ -15,7 +15,21 @@
       "Bash(npm run:*)",
       "Bash(npx astro:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('version:', d.get\\('version','?'\\)\\)\")",
+      "Read(//home/jay/projects/reddit-outreach/locks/**)",
+      "Read(//tmp/**)",
+      "Bash(git -C /home/jay/projects/reddit-outreach worktree list)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/home/jay/projects/reddit-outreach/.baadd'\\)\\); print\\('version:', d.get\\('version','?'\\)\\)\")",
+      "Read(//home/jay/projects/reddit-outreach/scripts/**)",
+      "Bash(gh release:*)",
+      "Bash(ls /tmp/baadd-wt-*)",
+      "Bash(kill -0 261939)",
+      "Bash(cat locks/*.lock)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(python3:*)",
+      "Bash(chmod +x:*)"
     ]
   }
 }
