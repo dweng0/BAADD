@@ -144,7 +144,20 @@ Read BDD.md to understand the full system context, then use the write_file tool
 to create PLAN.md in the current directory. Writing PLAN.md is the ONLY output
 you produce — do not describe the plan in text, do not use any other tool.
 
-PLAN.md must contain these four sections:
+PLAN.md must contain these six sections (in order):
+
+## 0. Commands
+
+Read BDD.md frontmatter (the YAML block at the top) and copy the exact shell
+commands the SE and Tester must use. This section is mandatory — it prevents
+every downstream agent from having to re-derive these themselves.
+
+  build_cmd: <exact value from BDD.md frontmatter>
+  test_cmd:  <exact value from BDD.md frontmatter>
+  lint_cmd:  <exact value from BDD.md frontmatter, or "none" if absent>
+  coverage_check: python3 scripts/check_bdd_coverage.py BDD.md
+
+The SE and Tester will copy these commands verbatim. Do not paraphrase.
 
 ## 1. Units
 
@@ -229,9 +242,10 @@ Follow this sequence exactly:
    If grep returns nothing — the marker is missing or wrong. Fix it before continuing.
 4. Run the test — confirm it FAILS (expected at this point)
 5. Implement all units from PLAN.md with the exact names and signatures specified
-6. Run the full test suite to confirm ALL pass:
-       python3 -m pytest tests/ -v --tb=short
-   (If the project has no pytest, try: python3 -m unittest discover tests/)
+6. Run the full test suite using the exact test_cmd from PLAN.md § 0 (Commands).
+   If anything fails — syntax errors, import errors, broken assertions — fix it and
+   re-run. Repeat until the full suite passes or you have tried 3 times.
+   The Tester will independently re-run the same suite; hand off clean work.
 7. Stop. Do not commit. Do not write journal. The PM will review and commit.
 """
 
@@ -247,6 +261,10 @@ IMPORTANT: You MUST use write_file to create QA_REPORT.md. Do not just output th
 report as text — the pipeline cannot read your stdout. Writing QA_REPORT.md is
 mandatory; it is the only file you may write.
 
+If any check FAILS, you must ALSO write FAIL_STACK_TRACE.md containing the full
+raw output (stdout + stderr) from the failing command — no truncation. The SE
+needs the complete stack trace to diagnose the problem.
+
 {retry_context}
 
 === YOUR TASK ===
@@ -254,7 +272,8 @@ mandatory; it is the only file you may write.
 1. Read PLAN.md
 2. Read the test file and implementation files it names
 3. Run each check below
-4. Write QA_REPORT.md using the exact format below
+4. If any check fails, write FAIL_STACK_TRACE.md with the full raw output
+5. Write QA_REPORT.md using the exact format below
 
 === CHECKS ===
 
@@ -263,9 +282,13 @@ A. Marker check
    PASS if the marker is present on the line IMMEDIATELY above the test function def.
    FAIL if absent, wrong string, or not directly above the def.
 
-B. Test run (full suite)
-   python3 -m pytest tests/ -v --tb=short
-   Record exit code and any failure output.
+B. Regression test run (full suite)
+   Use the exact test_cmd from PLAN.md § 0 (Commands). Run every test in the
+   project — not just the scenario under review — to confirm no regressions.
+   Capture the complete stdout + stderr.
+   PASS if exit code is 0. FAIL otherwise.
+   On FAIL: write the full captured output to FAIL_STACK_TRACE.md (every line,
+   including collection errors, tracebacks, and the final summary).
 
 C. Coverage check
    python3 scripts/check_bdd_coverage.py BDD.md 2>&1 | grep "{scenario_name}"
@@ -287,7 +310,7 @@ Detail: <paste the grep output, or "not found">
 ## B. Test run
 Status: PASS / FAIL
 Exit code: <n>
-Detail: <relevant output — failures or "all passed">
+Detail: <one-line summary — e.g. "all passed" or "5 failed, 2 errors — see FAIL_STACK_TRACE.md">
 
 ## C. Coverage check
 Status: PASS / FAIL
@@ -345,9 +368,14 @@ Output this exact line last:
 
 === IF YOU REJECT ===
 
-Write RETRY_NOTES.md. Be surgical — quote the exact wrong string and exact correct
-string for every issue. Never write vague guidance like "fix the marker". Show the SE
-precisely what to change.
+1. Read FAIL_STACK_TRACE.md if it exists — this contains the full test output and
+   stack traces from the Tester's run. Use it to give the SE precise guidance.
+
+2. Write RETRY_NOTES.md. Be surgical — quote the exact wrong string and exact
+   correct string for every issue. Never write vague guidance like "fix the marker".
+   Show the SE precisely what to change.
+   For each failure that has a stack trace, end the note with:
+     "Full stack trace: see FAIL_STACK_TRACE.md"
 
 Output this exact line last:
   PM_DECISION: REJECT
@@ -509,6 +537,35 @@ def _extract_markdown_from_stdout(stdout):
 
 
 # ---------------------------------------------------------------------------
+# Failed pipeline tracker
+# ---------------------------------------------------------------------------
+
+def _record_failed_pipeline(scenario_name, wt_path, main_dir, log):
+    """Append an entry to FAILED_PIPELINES.md in the main repo directory."""
+    retry_path = os.path.join(wt_path, "RETRY_NOTES.md")
+    retry_notes = read_file(retry_path).strip()
+    if not retry_notes:
+        retry_notes = "_No RETRY_NOTES.md found — PM did not record a reason._"
+
+    date = time.strftime("%Y-%m-%d %H:%M")
+    entry = (
+        f"\n## {date} — {scenario_name}\n\n"
+        f"{retry_notes}\n"
+    )
+
+    failed_path = os.path.join(main_dir, "FAILED_PIPELINES.md")
+    if not os.path.exists(failed_path):
+        header = "# Failed Pipelines\n\nScenarios that exhausted all retries without being accepted.\n"
+        with open(failed_path, "w") as f:
+            f.write(header)
+
+    with open(failed_path, "a") as f:
+        f.write(entry)
+
+    log(f"Recorded failure in FAILED_PIPELINES.md")
+
+
+# ---------------------------------------------------------------------------
 # Main pipeline
 # ---------------------------------------------------------------------------
 
@@ -600,13 +657,22 @@ def run_pm_pipeline(scenario_name, scenario_text, wt_path, branch, main_dir, con
         retry_section = ""
         retry_path = os.path.join(wt_path, "RETRY_NOTES.md")
         if attempt > 1 and os.path.exists(retry_path):
+            stack_trace_path = os.path.join(wt_path, "FAIL_STACK_TRACE.md")
+            stack_hint = (
+                "\nThe full stack trace from the failing test run is in "
+                "FAIL_STACK_TRACE.md — read it before making any changes.\n"
+                if os.path.exists(stack_trace_path) else ""
+            )
             retry_section = (
                 "=== RETRY NOTES FROM PM ===\n\n"
                 + read_file(retry_path)
+                + stack_hint
                 + "\n\nAddress every point above. Nothing else.\n"
             )
             log(f"RETRY_NOTES.md injected into SE prompt ({os.path.getsize(retry_path)} bytes):")
             print(tail_file(retry_path, "RETRY_NOTES.md"), flush=True)
+            if os.path.exists(stack_trace_path):
+                log(f"FAIL_STACK_TRACE.md present ({os.path.getsize(stack_trace_path)} bytes) — SE will be directed to read it")
 
         se_prompt = SE_IMPLEMENT_PROMPT.format(
             date=date,
@@ -728,7 +794,7 @@ def run_pm_pipeline(scenario_name, scenario_text, wt_path, branch, main_dir, con
             # (those are untracked so git clean handles them; git checkout resets tracked)
             reset_out, reset_err, reset_rc = run_cmd(
                 "git checkout -- . 2>&1; "
-                "git clean -fd -e PLAN.md -e QA_REPORT.md -e RETRY_NOTES.md 2>&1",
+                "git clean -fd -e PLAN.md -e QA_REPORT.md -e RETRY_NOTES.md -e FAIL_STACK_TRACE.md 2>&1",
                 cwd=wt_path,
             )
             if reset_out.strip():
@@ -737,6 +803,7 @@ def run_pm_pipeline(scenario_name, scenario_text, wt_path, branch, main_dir, con
                 log(f"WARN: git reset returned rc={reset_rc}")
         else:
             log(f"All {MAX_RETRIES} attempts exhausted — no commit")
+            _record_failed_pipeline(scenario_name, wt_path, main_dir, log)
 
     # -----------------------------------------------------------------------
     # Final checks
