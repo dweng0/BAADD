@@ -1,5 +1,10 @@
 # Journal
 
+## 2026-04-12 15:03 — Load skills from SKILL.md files
+The PM designed a `load_skills` unit to concatenate contents of multiple 'SKILL.md' files using dependency injection.
+The SE successfully implemented the functionality, creating `scripts/skill_loader.py` as planned.
+The tester confirmed full BDD and design compliance (A, C, D PASS), though the test run failed due to an assertion error regarding the concatenated output format.
+
 ## 2026-04-12 14:52 — Missing openai package error
 The PM designed a dependency checking mechanism using `is_package_installed` and integrated it into `try_initialize_openai` to gracefully handle environments where the 'openai' package might be missing. The SE successfully built these units, adhering strictly to the defined interfaces and design constraints. QA confirmed that this implementation is fully compliant with the design, achieved 100% coverage, and passed all test runs.
 
