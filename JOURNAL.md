@@ -1,5 +1,15 @@
 # Journal
 
+
+## 2026-04-12 14:21 — Orchestrator session
+
+Ran 20 agents across 5 round(s) (max 4 concurrent per round). Total agent time: 10045s.
+
+**Merged (13):** Detect coverage via partial name matching, Handle BDD.md with only frontmatter, Exit with error code when scenarios uncovered, Provider priority order, CUSTOM_MODEL required for custom provider without --model, and 8 more
+**Failed (7):** Report uncovered scenarios, No provider detected error message, Skills appended to system prompt, Read file that does not exist, Run bash command with stderr, and 2 more
+
+Coverage: 60/221 scenarios.
+
 ## 2026-04-12 15:03 — Custom event log path via --event-log
 The design specified implementing a custom event log path feature using the `--event-log` CLI flag, relying on dependency injection for logger initialization and path parsing. The SE successfully implemented this logic according to the plan. QA confirmed that all acceptance criteria passed, including BDD marker presence, full test suite success, and adherence to the original design specifications.
 
