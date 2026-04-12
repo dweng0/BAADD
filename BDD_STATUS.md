@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 221 scenario(s) across 16 test file(s).
+Checked 221 scenario(s) across 18 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -57,13 +57,13 @@ Checked 221 scenario(s) across 16 test file(s).
 - [ ] UNCOVERED: Run bash command with stderr
 - [ ] UNCOVERED: Bash command timeout after 300 seconds
 - [x] Read file that exists
-- [x] Read file that does not exist
+- [ ] UNCOVERED: Read file that does not exist
 - [ ] UNCOVERED: Truncate long file output
 - [ ] UNCOVERED: Write file creates parent directories
 - [ ] UNCOVERED: Edit file replaces exact string
 - [ ] UNCOVERED: Edit file fails when string not found
 - [ ] UNCOVERED: Edit file replaces only first occurrence
-- [ ] UNCOVERED: List files excludes git and node_modules
+- [x] List files excludes git and node_modules
 - [x] Search files finds pattern
 - [ ] UNCOVERED: Search files handles no matches
 
@@ -306,12 +306,12 @@ Checked 221 scenario(s) across 16 test file(s).
 - Run bash command and capture output
 - Run bash command with stderr
 - Bash command timeout after 300 seconds
+- Read file that does not exist
 - Truncate long file output
 - Write file creates parent directories
 - Edit file replaces exact string
 - Edit file fails when string not found
 - Edit file replaces only first occurrence
-- List files excludes git and node_modules
 - Search files handles no matches
 - Agent stops at max iterations
 - Wrap-up reminder injected at threshold
