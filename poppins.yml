@@ -7,10 +7,13 @@ orchestration:
 
   # LLM provider for the scenario ordering call
   # Options: anthropic | openai | groq | ollama | moonshot | dashscope | custom
-  provider: anthropic
+  provider: custom
+
+  # Base URL for custom provider
+  base_url: https://coding-intl.dashscope.aliyuncs.com/v1
 
   # Model used for the orchestrator's scenario ordering call
-  model_orchestrator: claude-haiku-4-5-20251001
+  model_orchestrator: qwen3.5-plus
 
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
@@ -21,10 +24,13 @@ orchestration:
 agent:
   # LLM provider for worker agents
   # Options: anthropic | openai | groq | ollama | moonshot | dashscope | custom
-  provider: anthropic
+  provider: custom
+
+  # Base URL for custom provider
+  base_url: https://coding-intl.dashscope.aliyuncs.com/v1
 
   # Default model (overridden by --model flag or MODEL env var)
-  default_model: claude-haiku-4-5-20251001
+  default_model: qwen3.5-plus
 
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
