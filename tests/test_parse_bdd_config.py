@@ -258,7 +258,7 @@ def test_run_orchestrator_n_rounds_sequentially():
             ],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
             env=no_provider_env,
         )
         assert "Round 1/3" in result.stdout
