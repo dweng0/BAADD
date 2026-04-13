@@ -829,13 +829,18 @@ def run_openai_loop(client, model, system_prompt, prompt, mode, event_log):
             wrap_up_injected = True
             event_log.wrap_up(iteration)
 
-        response = client.chat.completions.create(
-            model=model,
-            max_tokens=MAX_TOKENS,
-            messages=messages,
-            tools=TOOLS_OPENAI,
-            tool_choice="auto",
-        )
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                max_tokens=MAX_TOKENS,
+                messages=messages,
+                tools=TOOLS_OPENAI,
+                tool_choice="auto",
+            )
+        except Exception as api_err:
+            print(f"\n[BAADD agent: API error — {api_err}]", flush=True)
+            event_log.session_end(iteration, f"api_error: {api_err}")
+            sys.exit(1)
 
         choice = response.choices[0]
         msg = choice.message
