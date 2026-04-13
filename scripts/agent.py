@@ -32,6 +32,7 @@ import subprocess
 import argparse
 import glob as globmod
 import time
+import threading
 
 
 def load_dotenv(path=".env"):
@@ -591,6 +592,63 @@ def _ci_endgroup():
         print("::endgroup::", flush=True)
 
 
+class Heartbeat:
+    """Reads event log and shows concise progress during long API calls."""
+
+    def __init__(self, event_log_path, interval=15):
+        self.event_log_path = event_log_path
+        self.interval = interval
+        self._stop_event = threading.Event()
+        self._thread = None
+
+    def start(self):
+        self._stop_event.clear()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=0.5)
+
+    def _run(self):
+        while not self._stop_event.wait(self.interval):
+            try:
+                with open(self.event_log_path) as f:
+                    lines = f.readlines()
+                    if not lines:
+                        continue
+                    last = json.loads(lines[-1])
+                    iteration = last.get("iteration", "?")
+
+                    tokens = "?"
+                    for line in reversed(lines):
+                        d = json.loads(line)
+                        if d.get("event") == "api_response":
+                            tokens = d.get("cumulative_input_tokens", "?")
+                            break
+
+                    last_tool = ""
+                    last_thought = ""
+                    for line in reversed(lines):
+                        d = json.loads(line)
+                        if not last_tool and d.get("event") == "tool_call":
+                            last_tool = d.get("tool", "")
+                        if not last_thought and d.get("event") == "agent_text":
+                            last_thought = d.get("text", "").splitlines()[0][:80]
+                        if last_tool and last_thought:
+                            break
+
+                    msg = f"[iter {iteration}] tok:{tokens}"
+                    if last_tool:
+                        msg += f" last:{last_tool}"
+                    if last_thought:
+                        msg += f" — {last_thought}"
+                    print(f"\r\033[90m  {msg}\033[0m", end="", flush=True)
+            except Exception:
+                pass
+
+
 def _result_summary(result):
     """Return a short one-line summary of a tool result."""
     preview = str(result).strip()
@@ -734,13 +792,18 @@ def run_anthropic_loop(api_key, model, system_prompt, prompt, mode, event_log):
             wrap_up_injected = True
             event_log.wrap_up(iteration)
 
-        response = client.messages.create(
-            model=model,
-            max_tokens=MAX_TOKENS,
-            system=system_prompt,
-            tools=TOOLS,
-            messages=messages,
-        )
+        heartbeat = Heartbeat(event_log._path, interval=15)
+        heartbeat.start()
+        try:
+            response = client.messages.create(
+                model=model,
+                max_tokens=MAX_TOKENS,
+                system=system_prompt,
+                tools=TOOLS,
+                messages=messages,
+            )
+        finally:
+            heartbeat.stop()
 
         # Log token usage from the API response
         input_tokens = getattr(response.usage, "input_tokens", None)
@@ -829,6 +892,8 @@ def run_openai_loop(client, model, system_prompt, prompt, mode, event_log):
             wrap_up_injected = True
             event_log.wrap_up(iteration)
 
+        heartbeat = Heartbeat(event_log._path, interval=15)
+        heartbeat.start()
         try:
             response = client.chat.completions.create(
                 model=model,
@@ -841,6 +906,8 @@ def run_openai_loop(client, model, system_prompt, prompt, mode, event_log):
             print(f"\n[BAADD agent: API error — {api_err}]", flush=True)
             event_log.session_end(iteration, f"api_error: {api_err}")
             sys.exit(1)
+        finally:
+            heartbeat.stop()
 
         choice = response.choices[0]
         msg = choice.message
