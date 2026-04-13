@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-13 07:51 — Orchestrator session
+
+Ran 2 agents across 1 round(s) (max 2 concurrent per round). Total agent time: 1298s.
+
+**Failed (2):** Detect coverage via heuristic name matching, Report uncovered scenarios
+
+Coverage: 60/221 scenarios.
+
+
 ## 2026-04-12 19:27 — Orchestrator session
 
 Ran 2 agents across 1 round(s) (max 2 concurrent per round). Total agent time: 1281s.
