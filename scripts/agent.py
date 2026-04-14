@@ -872,11 +872,13 @@ def _stream_openai_response(client, model, messages):
     tool_calls is a list of SimpleNamespace(id, function=SimpleNamespace(name, arguments))
     or None if the response was text-only.
     """
+    _SPINNER = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
     text_chunks = []
     tool_buf = {}   # index -> {id, name, arguments}
     finish_reason = None
     input_tokens = output_tokens = None
     tok = 0
+    stream_start = time.time()
 
     try:
         stream = client.chat.completions.create(
@@ -905,14 +907,20 @@ def _stream_openai_response(client, model, messages):
                 text_chunks.append(delta.content)
                 tok += 1
                 if not IN_CI:
-                    preview = "".join(text_chunks).lstrip().splitlines()[0][:60]
-                    print(f"\r\033[90m  [generating... {tok} tok] {preview}\033[0m",
+                    spin = _SPINNER[tok % len(_SPINNER)]
+                    elapsed = time.time() - stream_start
+                    tps = tok / elapsed if elapsed > 0 else 0.0
+                    preview = "".join(text_chunks).lstrip().splitlines()[0][:50]
+                    print(f"\r\033[90m  {spin} {tok} tok | {tps:.1f} tok/s  {preview}\033[0m",
                           end="", flush=True)
 
             if delta.tool_calls:
                 tok += 1
                 if not IN_CI:
-                    print(f"\r\033[90m  [generating... {tok} tok]\033[0m",
+                    spin = _SPINNER[tok % len(_SPINNER)]
+                    elapsed = time.time() - stream_start
+                    tps = tok / elapsed if elapsed > 0 else 0.0
+                    print(f"\r\033[90m  {spin} {tok} tok | {tps:.1f} tok/s\033[0m",
                           end="", flush=True)
                 for tc in delta.tool_calls:
                     idx = tc.index
