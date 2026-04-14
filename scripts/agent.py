@@ -126,6 +126,13 @@ _apply_poppins_provider_config(_POPPINS_CFG)
 # Detect GitHub Actions for log grouping
 IN_CI = os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true"
 
+
+def _strip_thinking(text):
+    """Remove <|channel>thought...<channel|> reasoning blocks from model output."""
+    import re
+    cleaned = re.sub(r"<\|channel>.*?<channel\|>", "", text, flags=re.DOTALL)
+    return cleaned.strip()
+
 # Icons for tool types (plain-text, no emoji to keep CI logs clean)
 TOOL_ICONS = {
     "bash": "$",
@@ -819,14 +826,16 @@ def run_anthropic_loop(api_key, model, system_prompt, prompt, mode, event_log):
                 text = block.text.strip()
                 if text:
                     event_log.agent_text(text, iteration)
-                    if IN_CI:
-                        _ci_group(
-                            f"Agent [{iteration}/{MAX_ITERATIONS}]: {text[:80]}..."
-                        )
-                        print(text, flush=True)
-                        _ci_endgroup()
-                    else:
-                        print(f"\n\033[33m> {text}\033[0m", flush=True)
+                    display = _strip_thinking(text)
+                    if display:
+                        if IN_CI:
+                            _ci_group(
+                                f"Agent [{iteration}/{MAX_ITERATIONS}]: {display[:80]}..."
+                            )
+                            print(display, flush=True)
+                            _ci_endgroup()
+                        else:
+                            print(f"\n\033[33m> {display}\033[0m", flush=True)
 
         if response.stop_reason == "end_turn":
             print(f"\n[BAADD agent done — {iteration} iterations]", flush=True)
@@ -992,12 +1001,14 @@ def run_openai_loop(client, model, system_prompt, prompt, mode, event_log):
 
         if text:
             event_log.agent_text(text, iteration)
-            if IN_CI:
-                _ci_group(f"Agent [{iteration}/{MAX_ITERATIONS}]: {text[:80]}...")
-                print(text, flush=True)
-                _ci_endgroup()
-            else:
-                print(f"\n\033[33m> {text}\033[0m", flush=True)
+            display = _strip_thinking(text)
+            if display:
+                if IN_CI:
+                    _ci_group(f"Agent [{iteration}/{MAX_ITERATIONS}]: {display[:80]}...")
+                    print(display, flush=True)
+                    _ci_endgroup()
+                else:
+                    print(f"\n\033[33m> {display}\033[0m", flush=True)
 
         if finish_reason == "stop":
             print(f"\n[BAADD agent done — {iteration} iterations]", flush=True)

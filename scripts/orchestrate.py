@@ -32,55 +32,90 @@ from check_bdd_coverage import parse_scenarios, find_test_files, check_coverage
 from pm_worker import run_pm_pipeline, extract_scenario_block
 
 
-_PHASES_PER_SCENARIO = 4  # PM-PLAN + SE + TESTER + PM-ACCEPT
+# Phase detection — log filename prefix → display label (in pipeline order)
+_PHASE_PREFIXES = [
+    ("pm_plan",    "PM-PLAN"),
+    ("se",         "SE"),
+    ("tester",     "TESTER"),
+    ("pm_accept",  "ACCEPT"),
+]
 
 
-def _read_total_iterations(wt_paths):
-    """Sum each phase log's peak iteration across all active worktrees.
+def _read_wt_phase_state(wt_path):
+    """Return (active_label, current_iter, max_iter, done_labels) for one worktree.
 
-    Each phase (PM-PLAN, SE, TESTER, PM-ACCEPT) writes its own event log with
-    iteration numbers starting from 1.  Summing the peak per log gives a
-    monotonically increasing total that spans all completed and in-progress phases.
+    An iteration = one LLM call + one tool call.  Each phase has its own event
+    log starting at iteration 1, so we read per-log rather than summing across logs.
     """
-    total = 0
-    for wt_path in wt_paths:
-        for log_path in glob(os.path.join(wt_path, "agent_events_*.jsonl")):
-            phase_max = 0
-            try:
-                with open(log_path) as f:
-                    for raw in f:
-                        try:
-                            rec = json.loads(raw)
-                            if rec.get("event") == "iteration_start":
-                                phase_max = max(phase_max, rec.get("iteration", 0))
-                        except (json.JSONDecodeError, KeyError):
-                            pass
-            except OSError:
-                pass
-            total += phase_max
-    return total
+    by_phase = {}  # prefix -> (peak_iter, max_iter, completed)
+    for log_path in glob(os.path.join(wt_path, "agent_events_*.jsonl")):
+        name = os.path.basename(log_path)
+        phase_key = None
+        for prefix, _label in _PHASE_PREFIXES:
+            if name.startswith(f"agent_events_{prefix}_"):
+                phase_key = prefix
+                break
+        if phase_key is None:
+            continue
+        peak, mx, done = 0, 75, False
+        try:
+            with open(log_path) as f:
+                for raw in f:
+                    try:
+                        rec = json.loads(raw)
+                        ev = rec.get("event")
+                        if ev == "iteration_start":
+                            peak = max(peak, rec.get("iteration", 0))
+                            mx = rec.get("max_iterations", mx)
+                        elif ev == "session_end":
+                            done = True
+                    except (json.JSONDecodeError, KeyError):
+                        pass
+        except OSError:
+            pass
+        existing = by_phase.get(phase_key)
+        if existing is None or peak > existing[0]:
+            by_phase[phase_key] = (peak, mx, done)
+
+    done_labels, active_label, current_iter, max_iter = [], None, 0, 75
+    for prefix, label in _PHASE_PREFIXES:
+        if prefix not in by_phase:
+            continue
+        peak, mx, completed = by_phase[prefix]
+        if completed:
+            done_labels.append(label)
+        elif active_label is None:
+            active_label, current_iter, max_iter = label, peak, mx
+
+    return active_label, current_iter, max_iter, done_labels
 
 
-def _progress_bar(wt_paths, max_iter_per_agent, num_agents, stop_event, interval=8):
-    """Background thread: render a combined iteration progress bar on the terminal."""
+def _progress_bar(wt_paths, _max_iter_unused, _num_agents_unused, stop_event, interval=8):
+    """Background thread: per-worktree phase + iteration bar on the terminal.
+
+    Each worktree shows:  PM-PLAN✓ SE✓ [TESTER ████░░░░░░░░░░░░░░░░░░░░ 8/75]
+    """
     if not sys.stdout.isatty():
         return
-    bar_width = 28
-    total_max = max_iter_per_agent * _PHASES_PER_SCENARIO * num_agents
+    bar_width = 20
     last_len = 0
     while not stop_event.wait(timeout=interval):
-        total_iter = _read_total_iterations(wt_paths)
-        pct = min(total_iter / total_max, 1.0) if total_max > 0 else 0.0
-        filled = int(bar_width * pct)
-        bar = "█" * filled + "░" * (bar_width - filled)
-        line = (
-            f"  [{bar}] {pct * 100:.0f}%"
-            f" — {total_iter}/{total_max} iter ({num_agents} agent(s))"
-        )
-        # Overwrite previous bar, then print new one without newline
-        print(f"\r{' ' * last_len}\r{line}", end="", flush=True)
-        last_len = len(line)
-    # Seal the bar with a newline so subsequent output starts on a fresh line
+        parts = []
+        for wt_path in wt_paths:
+            active, curr, mx, done = _read_wt_phase_state(wt_path)
+            done_str = " ".join(f"{l}✓" for l in done)
+            if active:
+                pct = curr / mx if mx > 0 else 0.0
+                filled = int(bar_width * pct)
+                bar = "█" * filled + "░" * (bar_width - filled)
+                seg = f"[{active} {bar} {curr}/{mx}]"
+                parts.append(f"{done_str} {seg}".strip())
+            elif done_str:
+                parts.append(done_str)
+        if parts:
+            line = "  " + "   ".join(parts)
+            print(f"\r{' ' * last_len}\r{line}", end="", flush=True)
+            last_len = len(line)
     if last_len:
         print(f"\r{' ' * last_len}\r", end="", flush=True)
 
