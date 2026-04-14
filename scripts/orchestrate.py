@@ -44,10 +44,10 @@ _PHASE_PREFIXES = [
 def _read_wt_phase_state(wt_path):
     """Return (active_label, current_iter, max_iter, done_labels) for one worktree.
 
-    An iteration = one LLM call + one tool call.  Each phase has its own event
-    log starting at iteration 1, so we read per-log rather than summing across logs.
+    Uses file mtime to pick the most recently written log per phase so retries
+    always reflect the live attempt rather than a stale peak from a prior attempt.
     """
-    by_phase = {}  # prefix -> (peak_iter, max_iter, completed)
+    by_phase = {}  # prefix -> (mtime, peak_iter, max_iter, completed)
     for log_path in glob(os.path.join(wt_path, "agent_events_*.jsonl")):
         name = os.path.basename(log_path)
         phase_key = None
@@ -56,6 +56,10 @@ def _read_wt_phase_state(wt_path):
                 phase_key = prefix
                 break
         if phase_key is None:
+            continue
+        mtime = os.path.getmtime(log_path)
+        existing = by_phase.get(phase_key)
+        if existing and existing[0] >= mtime:
             continue
         peak, mx, done = 0, 75, False
         try:
@@ -73,15 +77,13 @@ def _read_wt_phase_state(wt_path):
                         pass
         except OSError:
             pass
-        existing = by_phase.get(phase_key)
-        if existing is None or peak > existing[0]:
-            by_phase[phase_key] = (peak, mx, done)
+        by_phase[phase_key] = (mtime, peak, mx, done)
 
     done_labels, active_label, current_iter, max_iter = [], None, 0, 75
     for prefix, label in _PHASE_PREFIXES:
         if prefix not in by_phase:
             continue
-        peak, mx, completed = by_phase[prefix]
+        _mtime, peak, mx, completed = by_phase[prefix]
         if completed:
             done_labels.append(label)
         elif active_label is None:
