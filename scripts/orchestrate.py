@@ -24,11 +24,57 @@ import time
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from glob import glob
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse_poppins_config import get_config
 from check_bdd_coverage import parse_scenarios, find_test_files, check_coverage
 from pm_worker import run_pm_pipeline, extract_scenario_block
+
+
+def _read_total_iterations(wt_paths):
+    """Sum the latest iteration number across all event logs in all active worktrees."""
+    total = 0
+    for wt_path in wt_paths:
+        wt_max = 0
+        for log_path in glob(os.path.join(wt_path, "agent_events_*.jsonl")):
+            try:
+                with open(log_path) as f:
+                    for raw in f:
+                        try:
+                            rec = json.loads(raw)
+                            if rec.get("event") == "iteration_start":
+                                wt_max = max(wt_max, rec.get("iteration", 0))
+                        except (json.JSONDecodeError, KeyError):
+                            pass
+            except OSError:
+                pass
+        total += wt_max
+    return total
+
+
+def _progress_bar(wt_paths, max_iter_per_agent, num_agents, stop_event, interval=8):
+    """Background thread: render a combined iteration progress bar on the terminal."""
+    if not sys.stdout.isatty():
+        return
+    bar_width = 28
+    total_max = max_iter_per_agent * num_agents
+    last_len = 0
+    while not stop_event.wait(timeout=interval):
+        total_iter = _read_total_iterations(wt_paths)
+        pct = min(total_iter / total_max, 1.0) if total_max > 0 else 0.0
+        filled = int(bar_width * pct)
+        bar = "█" * filled + "░" * (bar_width - filled)
+        line = (
+            f"  [{bar}] {pct * 100:.0f}%"
+            f" — {total_iter}/{total_max} iter ({num_agents} agent(s))"
+        )
+        # Overwrite previous bar, then print new one without newline
+        print(f"\r{' ' * last_len}\r{line}", end="", flush=True)
+        last_len = len(line)
+    # Seal the bar with a newline so subsequent output starts on a fresh line
+    if last_len:
+        print(f"\r{' ' * last_len}\r", end="", flush=True)
 
 
 def load_dotenv(path=".env"):
@@ -836,6 +882,17 @@ def main():
         completed_this_session = 0
         progress_lock = threading.Lock()
 
+        # Combined iteration progress bar across all worktrees
+        max_iter_cfg = agent_config.get("max_iterations", 75)
+        wt_paths = [wt for wt, _branch, _text in workers.values()]
+        pb_stop = threading.Event()
+        pb_thread = threading.Thread(
+            target=_progress_bar,
+            args=(wt_paths, max_iter_cfg, len(workers), pb_stop),
+            daemon=True,
+        )
+        pb_thread.start()
+
         with ThreadPoolExecutor(max_workers=max_agents) as executor:
             futures = {}
             for scenario_name, (wt_path, branch, scenario_text) in workers.items():
@@ -888,6 +945,9 @@ def main():
                             "stdout": str(e),
                         }
                     )
+
+        pb_stop.set()
+        pb_thread.join(timeout=2)
 
         # Merge results in planned order
         print(f"\n  Merging {len(results)} results in order...", flush=True)
