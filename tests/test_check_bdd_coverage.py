@@ -226,6 +226,49 @@ def test_detect_coverage_via_heuristic_name_matching():
     assert result is True
 
 
+# BDD: Report uncovered scenarios
+def test_report_uncovered_scenarios():
+    """Given BDD.md with 5 scenarios and only 2 having test coverage,
+    check_bdd_coverage.py outputs 3 scenarios marked UNCOVERED with [ ] checkbox."""
+    import subprocess
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        bdd_file = os.path.join(tmpdir, "BDD.md")
+        tests_dir = os.path.join(tmpdir, "tests")
+        os.makedirs(tests_dir)
+
+        with open(bdd_file, "w") as f:
+            f.write("---\nlanguage: python\n---\n\n")
+            f.write("Feature: Example\n")
+            f.write("    Scenario: Alpha scenario\n")
+            f.write("    Scenario: Beta scenario\n")
+            f.write("    Scenario: Gamma scenario\n")
+            f.write("    Scenario: Delta scenario\n")
+            f.write("    Scenario: Epsilon scenario\n")
+
+        # Cover only Alpha and Beta via explicit BDD markers
+        with open(os.path.join(tests_dir, "test_covered.py"), "w") as f:
+            f.write("# BDD: Alpha scenario\ndef test_alpha(): pass\n")
+            f.write("# BDD: Beta scenario\ndef test_beta(): pass\n")
+
+        script_path = os.path.join(os.path.dirname(__file__), "..", "scripts", "check_bdd_coverage.py")
+        result = subprocess.run(
+            [sys.executable, script_path, bdd_file],
+            capture_output=True,
+            text=True,
+            cwd=tmpdir,
+        )
+
+        output = result.stdout
+        assert "[ ] UNCOVERED: Gamma scenario" in output
+        assert "[ ] UNCOVERED: Delta scenario" in output
+        assert "[ ] UNCOVERED: Epsilon scenario" in output
+        assert output.count("[ ] UNCOVERED:") == 3
+        assert "[x] Alpha scenario" in output
+        assert "[x] Beta scenario" in output
+        assert result.returncode == 1
+
+
 # BDD: Handle empty BDD.md with no scenarios
 def test_handle_empty_bdd_md_with_no_scenarios():
     """Test that check_bdd_coverage.py handles BDD.md with frontmatter but no scenarios."""
