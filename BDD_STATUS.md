@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 333 scenario(s) across 19 test file(s).
+Checked 333 scenario(s) across 20 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -21,7 +21,7 @@ Checked 333 scenario(s) across 19 test file(s).
 - [x] Detect coverage via heuristic name matching
 - [x] Detect coverage via partial name matching
 - [x] Report uncovered scenarios
-- [x] Exit with error code when scenarios uncovered
+- [ ] UNCOVERED: Exit with error code when scenarios uncovered
 - [x] Exit with success when all scenarios covered
 - [x] Handle empty BDD.md with no scenarios
 - [x] Handle BDD.md with only frontmatter
@@ -33,7 +33,7 @@ Checked 333 scenario(s) across 19 test file(s).
 - [x] Detect Groq provider from API key
 - [x] Detect Ollama provider from localhost probe
 - [x] Detect custom provider from base URL
-- [ ] UNCOVERED: Provider priority order
+- [x] Provider priority order
 - [x] Use provider default model
 - [x] Override model via MODEL environment variable
 - [x] Load provider config from poppins.yml
@@ -42,7 +42,7 @@ Checked 333 scenario(s) across 19 test file(s).
 - [ ] UNCOVERED: No provider detected error message
 - [ ] UNCOVERED: CUSTOM_MODEL required for custom provider without --model
 - [x] Unknown provider error
-- [ ] UNCOVERED: Override provider via --provider flag
+- [x] Override provider via --provider flag
 - [ ] UNCOVERED: Missing anthropic package error
 - [x] Missing openai package error
 - [ ] UNCOVERED: Empty stdin prompt error
@@ -436,13 +436,12 @@ Checked 333 scenario(s) across 19 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**64/333 scenarios covered.**
+**65/333 scenarios covered.**
 
-269 scenario(s) need tests:
-- Provider priority order
+268 scenario(s) need tests:
+- Exit with error code when scenarios uncovered
 - No provider detected error message
 - CUSTOM_MODEL required for custom provider without --model
-- Override provider via --provider flag
 - Missing anthropic package error
 - Empty stdin prompt error
 - Skills appended to system prompt
