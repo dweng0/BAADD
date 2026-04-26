@@ -40,7 +40,7 @@ Checked 333 scenario(s) across 20 test file(s).
 - [x] Environment variables override poppins.yml config
 - [x] Set OLLAMA_HOST from poppins.yml base_url
 - [x] No provider detected error message
-- [ ] UNCOVERED: CUSTOM_MODEL required for custom provider without --model
+- [x] CUSTOM_MODEL required for custom provider without --model
 - [x] Unknown provider error
 - [x] Override provider via --provider flag
 - [ ] UNCOVERED: Missing anthropic package error
@@ -436,10 +436,9 @@ Checked 333 scenario(s) across 20 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**67/333 scenarios covered.**
+**68/333 scenarios covered.**
 
-266 scenario(s) need tests:
-- CUSTOM_MODEL required for custom provider without --model
+265 scenario(s) need tests:
 - Missing anthropic package error
 - Empty stdin prompt error
 - Skills appended to system prompt

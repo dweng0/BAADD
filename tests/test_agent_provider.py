@@ -53,6 +53,67 @@ print(result)
         os.unlink(script_path)
 
 
+# BDD: CUSTOM_MODEL required for custom provider without --model
+def test_custom_model_required_for_custom_provider_without_model():
+    """Test that agent.py requires CUSTOM_MODEL when provider is custom and no --model flag."""
+    scripts_dir = os.path.abspath("scripts")
+    agent_path = os.path.abspath("scripts/agent.py")
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Run the script with custom provider but no CUSTOM_MODEL
+        env = os.environ.copy()
+        env['CUSTOM_BASE_URL'] = 'https://custom.api.example.com/v1'
+        env['CUSTOM_API_KEY'] = 'sk-test-key'
+        env['CUSTOM_MODEL'] = ''  # Clear CUSTOM_MODEL to trigger the error
+        for key in ['ANTHROPIC_API_KEY', 'MOONSHOT_API_KEY', 'DASHSCOPE_API_KEY', 
+                    'OPENAI_API_KEY', 'GROQ_API_KEY', 'OLLAMA_HOST']:
+            env.pop(key, None)
+        
+        # Test detect_provider
+        test_script = """
+import os
+import sys
+sys.path.insert(0, 'SCRIPTS_DIR')
+os.environ['CUSTOM_BASE_URL'] = 'https://custom.api.example.com/v1'
+from agent import detect_provider
+print("provider:" + str(detect_provider()))
+""".replace('SCRIPTS_DIR', scripts_dir)
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(test_script)
+            script_path = f.name
+        
+        try:
+            result = subprocess.run(
+                [sys.executable, script_path],
+                capture_output=True,
+                text=True,
+                env=env,
+                cwd=tmpdir,
+            )
+            
+            # detect_provider should return "custom"
+            assert result.returncode == 0, f"Script failed: {result.stderr}"
+            assert result.stdout.strip() == "provider:custom", f"Expected 'provider:custom', got '{result.stdout.strip()}'"
+        finally:
+            os.unlink(script_path)
+        
+        # Now test the full agent.py script with no --model and no CUSTOM_MODEL
+        # Provide empty stdin to trigger CUSTOM_MODEL error before stdin error
+        result = subprocess.run(
+            [sys.executable, agent_path, "--provider", "custom"],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=tmpdir,
+            input="",
+        )
+        
+        # Should exit with code 1 and print CUSTOM_MODEL error (checked before stdin)
+        assert result.returncode == 1, f"Expected exit code 1, got {result.returncode}"
+        assert "ERROR: CUSTOM_MODEL not set" in result.stderr, f"Expected CUSTOM_MODEL error, got: {result.stderr}"
+
+
 # BDD: No provider detected error message
 def test_no_provider_detected_error_message():
     """Test that agent.py prints error listing all supported provider env vars when no provider detected."""
