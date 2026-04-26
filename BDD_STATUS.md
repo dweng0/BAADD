@@ -21,7 +21,7 @@ Checked 333 scenario(s) across 20 test file(s).
 - [x] Detect coverage via heuristic name matching
 - [x] Detect coverage via partial name matching
 - [x] Report uncovered scenarios
-- [ ] UNCOVERED: Exit with error code when scenarios uncovered
+- [x] Exit with error code when scenarios uncovered
 - [x] Exit with success when all scenarios covered
 - [x] Handle empty BDD.md with no scenarios
 - [x] Handle BDD.md with only frontmatter
@@ -436,10 +436,9 @@ Checked 333 scenario(s) across 20 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**65/333 scenarios covered.**
+**66/333 scenarios covered.**
 
-268 scenario(s) need tests:
-- Exit with error code when scenarios uncovered
+267 scenario(s) need tests:
 - No provider detected error message
 - CUSTOM_MODEL required for custom provider without --model
 - Missing anthropic package error

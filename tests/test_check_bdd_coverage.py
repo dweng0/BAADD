@@ -226,6 +226,7 @@ def test_detect_coverage_via_heuristic_name_matching():
     assert result is True
 
 
+# BDD: Exit with error code when scenarios uncovered
 # BDD: Report uncovered scenarios
 def test_report_uncovered_scenarios():
     """Given BDD.md with 5 scenarios and only 2 having test coverage,

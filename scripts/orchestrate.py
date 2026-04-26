@@ -258,7 +258,7 @@ def resolve_model_and_client(provider, model_override=None):
             client = anthropic.Anthropic(api_key=api_key)
             response = client.messages.create(
                 model=model,
-                max_tokens=2048,
+                max_tokens=8192,
                 messages=[{"role": "user", "content": prompt}],
             )
             return response.content[0].text.strip()
@@ -301,7 +301,7 @@ def resolve_model_and_client(provider, model_override=None):
     def call(prompt):
         response = oai_client.chat.completions.create(
             model=model,
-            max_tokens=2048,
+            max_tokens=8192,
             messages=[{"role": "user", "content": prompt}],
         )
         return response.choices[0].message.content.strip()
