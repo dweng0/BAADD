@@ -11,12 +11,12 @@ orchestration:
   provider: custom
 
   # Base URL for custom provider
-  #  base_url: https://coding-intl.dashscope.aliyuncs.com/v1
-  base_url: http://192.168.1.112:1234/v1
+  base_url: https://coding-intl.dashscope.aliyuncs.com/v1
+  # base_url: http://192.168.1.112:1234/v1
   # Model used for the orchestrator's scenario ordering call
-  #  model_orchestrator: qwen3.5-plus
+  model_orchestrator: qwen3.5-plus
 
-  model_orchestrator: qwen-esper3-reasoning-coder-instruct-12b-brainstorm20x-i1
+  # model_orchestrator: qwen-esper3-reasoning-coder-instruct-12b-brainstorm20x-i1
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
 
@@ -29,12 +29,11 @@ agent:
   provider: custom
 
   # Base URL for custom provider
-  base_url: http://192.168.1.112:1234/v1
+
+  base_url: https://coding-intl.dashscope.aliyuncs.com/v1
 
   # Default model (overridden by --model flag or MODEL env var)
-  #  default_model: qwen3.5-plus
-
-  default_model: qwen-esper3-reasoning-coder-instruct-12b-brainstorm20x-i1
+  default_model: qwen3.5-plus
 
   # Base URL — required for ollama/custom, ignored for anthropic/openai/groq
   # base_url: http://localhost:11434
