@@ -189,7 +189,7 @@ Checked 333 scenario(s) across 29 test file(s).
 - [x] Write orchestrator event log
 - [ ] UNCOVERED: Write orchestrator journal entry
 - [ ] UNCOVERED: Override max parallel agents via CLI
-- [ ] UNCOVERED: Dry run mode shows plan without execution
+- [x] Dry run mode shows plan without execution
 - [ ] UNCOVERED: Custom BDD.md path via --bdd flag
 - [ ] UNCOVERED: Override orchestrator planning model
 - [ ] UNCOVERED: Force orchestrator provider via CLI
@@ -212,9 +212,9 @@ Checked 333 scenario(s) across 29 test file(s).
 - [x] Detect comment prefix by file extension
 - [x] Detect JavaScript comment prefix
 - [x] Find test line matching scenario
-- [ ] UNCOVERED: Insert marker above test function
-- [ ] UNCOVERED: Skip if marker already exists
-- [ ] UNCOVERED: Dry run mode shows planned changes
+- [x] Insert marker above test function
+- [x] Skip if marker already exists
+- [x] Dry run mode shows planned changes
 - [ ] UNCOVERED: Apply mode modifies files
 
 ## Feature: Dotenv Loading
@@ -436,9 +436,9 @@ Checked 333 scenario(s) across 29 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**156/333 scenarios covered.**
+**160/333 scenarios covered.**
 
-177 scenario(s) need tests:
+173 scenario(s) need tests:
 - Fallback to BDD.md order on AI failure
 - Select top N scenarios for parallel run
 - Create worktrees for parallel scenarios
@@ -451,7 +451,6 @@ Checked 333 scenario(s) across 29 test file(s).
 - Override max rounds via CLI
 - Write orchestrator journal entry
 - Override max parallel agents via CLI
-- Dry run mode shows plan without execution
 - Custom BDD.md path via --bdd flag
 - Override orchestrator planning model
 - Force orchestrator provider via CLI
@@ -465,9 +464,6 @@ Checked 333 scenario(s) across 29 test file(s).
 - Setup Go dependencies
 - Always install agent dependencies
 - Skip unknown language gracefully
-- Insert marker above test function
-- Skip if marker already exists
-- Dry run mode shows planned changes
 - Apply mode modifies files
 - GitHub Actions workflow triggers on schedule
 - Manual workflow dispatch
