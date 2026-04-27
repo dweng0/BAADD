@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 333 scenario(s) across 20 test file(s).
+Checked 333 scenario(s) across 23 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -45,24 +45,24 @@ Checked 333 scenario(s) across 20 test file(s).
 - [x] Override provider via --provider flag
 - [x] Missing anthropic package error
 - [x] Missing openai package error
-- [ ] UNCOVERED: Empty stdin prompt error
+- [x] Empty stdin prompt error
 - [x] Load skills from SKILL.md files
-- [ ] UNCOVERED: Skills appended to system prompt
-- [ ] UNCOVERED: Skip skills loading if directory missing
+- [x] Skills appended to system prompt
+- [x] Skip skills loading if directory missing
 - [x] Custom event log path via --event-log
 
 ## Feature: Agent Tool Execution
 
-- [ ] UNCOVERED: Run bash command and capture output
-- [ ] UNCOVERED: Run bash command with stderr
-- [ ] UNCOVERED: Bash command timeout after 300 seconds
+- [x] Run bash command and capture output
+- [x] Run bash command with stderr
+- [x] Bash command timeout after 300 seconds
 - [x] Read file that exists
-- [ ] UNCOVERED: Read file that does not exist
-- [ ] UNCOVERED: Truncate long file output
-- [ ] UNCOVERED: Write file creates parent directories
-- [ ] UNCOVERED: Edit file replaces exact string
-- [ ] UNCOVERED: Edit file fails when string not found
-- [ ] UNCOVERED: Edit file replaces only first occurrence
+- [x] Read file that does not exist
+- [x] Truncate long file output
+- [x] Write file creates parent directories
+- [x] Edit file replaces exact string
+- [x] Edit file fails when string not found
+- [x] Edit file replaces only first occurrence
 - [x] List files excludes git and node_modules
 - [x] Search files finds pattern
 - [x] Search files handles no matches
@@ -70,31 +70,31 @@ Checked 333 scenario(s) across 20 test file(s).
 ## Feature: Agent Loop and Iteration Management
 
 - [ ] UNCOVERED: Agent stops at max iterations
-- [ ] UNCOVERED: Wrap-up reminder injected at threshold
-- [ ] UNCOVERED: Wrap-up reminder content for evolve mode
-- [ ] UNCOVERED: Wrap-up reminder content for bootstrap mode
+- [x] Wrap-up reminder injected at threshold
+- [x] Wrap-up reminder content for evolve mode
+- [x] Wrap-up reminder content for bootstrap mode
 - [ ] UNCOVERED: Session ends on end_turn stop reason
 
 ## Feature: Context Window Management
 
-- [ ] UNCOVERED: Estimate tokens from text
-- [ ] UNCOVERED: Trim context when exceeding limit
-- [ ] UNCOVERED: Preserve recent messages during trim
-- [ ] UNCOVERED: Trim only tool result content
+- [x] Estimate tokens from text
+- [x] Trim context when exceeding limit
+- [x] Preserve recent messages during trim
+- [x] Trim only tool result content
 
 ## Feature: Event Logging
 
-- [ ] UNCOVERED: Log session start with provider and model
-- [ ] UNCOVERED: Log tool call with input preview
-- [ ] UNCOVERED: Log tool result with duration
-- [ ] UNCOVERED: Log token usage per API response
-- [ ] UNCOVERED: Log session end with reason
+- [x] Log session start with provider and model
+- [x] Log tool call with input preview
+- [x] Log tool result with duration
+- [x] Log token usage per API response
+- [x] Log session end with reason
 
 ## Feature: Poppins Configuration Parser
 
 - [x] Parse poppins.yml with agent section
 - [x] Apply defaults when poppins.yml missing
-- [ ] UNCOVERED: Deep merge file config with defaults
+- [x] Deep merge file config with defaults
 - [x] Default max_rounds is 1
 - [x] Get single config value via dot notation
 - [x] Search parent directories for poppins.yml
@@ -285,7 +285,7 @@ Checked 333 scenario(s) across 20 test file(s).
 - [ ] UNCOVERED: Custom provider requires api_key string placeholder
 - [ ] UNCOVERED: Ollama provider uses "ollama" as api_key
 - [ ] UNCOVERED: Mode flag affects wrap-up message content
-- [ ] UNCOVERED: Bootstrap mode agent prompt
+- [x] Bootstrap mode agent prompt
 - [ ] UNCOVERED: Handle scenario with special characters in name
 - [ ] UNCOVERED: Handle concurrent scenario locks
 - [ ] UNCOVERED: Issue response file format parsing
@@ -436,36 +436,11 @@ Checked 333 scenario(s) across 20 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**71/333 scenarios covered.**
+**97/333 scenarios covered.**
 
-262 scenario(s) need tests:
-- Empty stdin prompt error
-- Skills appended to system prompt
-- Skip skills loading if directory missing
-- Run bash command and capture output
-- Run bash command with stderr
-- Bash command timeout after 300 seconds
-- Read file that does not exist
-- Truncate long file output
-- Write file creates parent directories
-- Edit file replaces exact string
-- Edit file fails when string not found
-- Edit file replaces only first occurrence
+236 scenario(s) need tests:
 - Agent stops at max iterations
-- Wrap-up reminder injected at threshold
-- Wrap-up reminder content for evolve mode
-- Wrap-up reminder content for bootstrap mode
 - Session ends on end_turn stop reason
-- Estimate tokens from text
-- Trim context when exceeding limit
-- Preserve recent messages during trim
-- Trim only tool result content
-- Log session start with provider and model
-- Log tool call with input preview
-- Log tool result with duration
-- Log token usage per API response
-- Log session end with reason
-- Deep merge file config with defaults
 - Trust repo owner's issues directly
 - Trust community issue with agent-approved label from owner
 - Reject community issue with agent-approved from non-owner
@@ -594,7 +569,6 @@ Checked 333 scenario(s) across 20 test file(s).
 - Custom provider requires api_key string placeholder
 - Ollama provider uses "ollama" as api_key
 - Mode flag affects wrap-up message content
-- Bootstrap mode agent prompt
 - Handle scenario with special characters in name
 - Handle concurrent scenario locks
 - Issue response file format parsing
