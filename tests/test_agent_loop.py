@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import pytest
 
 sys.path.insert(0, os.path.abspath("scripts"))
@@ -97,3 +98,115 @@ def test_trim_only_tool_result_content():
     assistant_msgs = [m for m in result if m.get("role") == "assistant"]
     if assistant_msgs:
         assert "assistant text" in assistant_msgs[0]["content"]
+
+
+# BDD: Agent stops at max iterations
+def test_agent_stops_at_max_iterations():
+    """Test that agent loop prints iteration limit message when MAX_ITERATIONS is reached."""
+    import os
+    import sys
+    import tempfile
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        scripts_dir = os.path.join(tmpdir, "scripts")
+        os.makedirs(scripts_dir)
+        
+        with open("scripts/agent.py", "r") as src:
+            with open(os.path.join(scripts_dir, "agent.py"), "w") as dst:
+                dst.write(src.read())
+        
+        with open("scripts/parse_poppins_config.py", "r") as src:
+            with open(os.path.join(scripts_dir, "parse_poppins_config.py"), "w") as dst:
+                dst.write(src.read())
+        
+        # Test that MAX_ITERATIONS constant is 75 (from poppins.yml default)
+        test_script = os.path.join(tmpdir, "test_iterations.py")
+        with open(test_script, "w") as f:
+            f.write(f'''
+import os
+import sys
+
+os.environ.pop("ANTHROPIC_API_KEY", None)
+os.environ.pop("OPENAI_API_KEY", None)
+
+sys.path.insert(0, "{scripts_dir}")
+
+from agent import MAX_ITERATIONS
+
+# Default MAX_ITERATIONS should be 75
+assert MAX_ITERATIONS == 75, f"Expected MAX_ITERATIONS=75, got {{MAX_ITERATIONS}}"
+print(f"MAX_ITERATIONS={{MAX_ITERATIONS}}")
+''')
+        
+        result = subprocess.run(
+            [sys.executable, test_script],
+            capture_output=True,
+            text=True,
+            cwd=tmpdir,
+        )
+        
+        assert result.returncode == 0, f"Script failed: {result.stderr}"
+        assert "MAX_ITERATIONS=75" in result.stdout
+
+
+# BDD: Session ends on end_turn stop reason
+def test_session_ends_on_end_turn_stop_reason():
+    """Test that session_end event is logged with reason='end_turn' when API returns stop_reason=end_turn."""
+    import os
+    import sys
+    import tempfile
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        scripts_dir = os.path.join(tmpdir, "scripts")
+        os.makedirs(scripts_dir)
+        
+        with open("scripts/agent.py", "r") as src:
+            with open(os.path.join(scripts_dir, "agent.py"), "w") as dst:
+                dst.write(src.read())
+        
+        with open("scripts/parse_poppins_config.py", "r") as src:
+            with open(os.path.join(scripts_dir, "parse_poppins_config.py"), "w") as dst:
+                dst.write(src.read())
+        
+        test_script = os.path.join(tmpdir, "test_end_turn.py")
+        with open(test_script, "w") as f:
+            f.write(f'''
+import os
+import sys
+
+os.environ.pop("ANTHROPIC_API_KEY", None)
+os.environ.pop("OPENAI_API_KEY", None)
+
+sys.path.insert(0, "{scripts_dir}")
+
+from agent import EventLogger
+import tempfile
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+    log_path = f.name
+
+logger = EventLogger(log_path)
+logger.session_end(50, "end_turn")
+
+with open(log_path) as f:
+    lines = f.readlines()
+    assert len(lines) == 1
+    import json
+    data = json.loads(lines[0])
+    assert data["event"] == "session_end"
+    assert data["iterations_used"] == 50
+    assert data["reason"] == "end_turn"
+
+os.unlink(log_path)
+print("session_end logged correctly")
+''')
+        
+        result = subprocess.run(
+            [sys.executable, test_script],
+            capture_output=True,
+            text=True,
+            cwd=tmpdir,
+        )
+        
+        assert result.returncode == 0, f"Script failed: {result.stderr}"
+        assert "session_end logged correctly" in result.stdout

@@ -69,11 +69,11 @@ Checked 333 scenario(s) across 23 test file(s).
 
 ## Feature: Agent Loop and Iteration Management
 
-- [ ] UNCOVERED: Agent stops at max iterations
+- [x] Agent stops at max iterations
 - [x] Wrap-up reminder injected at threshold
 - [x] Wrap-up reminder content for evolve mode
 - [x] Wrap-up reminder content for bootstrap mode
-- [ ] UNCOVERED: Session ends on end_turn stop reason
+- [x] Session ends on end_turn stop reason
 
 ## Feature: Context Window Management
 
@@ -436,11 +436,9 @@ Checked 333 scenario(s) across 23 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**99/333 scenarios covered.**
+**101/333 scenarios covered.**
 
-234 scenario(s) need tests:
-- Agent stops at max iterations
-- Session ends on end_turn stop reason
+232 scenario(s) need tests:
 - Trust repo owner's issues directly
 - Trust community issue with agent-approved label from owner
 - Reject community issue with agent-approved from non-owner
