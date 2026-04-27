@@ -1910,3 +1910,83 @@ System: BAADD (Behaviour and AI Driven Development) — a framework where an AI 
             Given the subprocess closes its stdout pipe (process ended)
             When the stdout reader thread finishes reading
             Then it sets a done_event so the main loop can detect process exit without polling returncode in a tight loop
+
+    Feature: Merge Agent for Conflict Resolution
+        As a framework developer
+        I want a dedicated merge agent to handle scenario merges
+        So that conflicts are resolved intelligently before post-merge tests
+
+        Scenario: Merge agent detects merge conflicts
+            Given 3 scenarios modified the same test file with different imports
+            When merge agent attempts to merge
+            Then it detects the conflict markers in the file
+
+        Scenario: Merge agent combines imports from multiple scenarios
+            Given scenario A adds "from mod import foo" and scenario B adds "from mod import bar"
+            When merge agent processes both
+            Then merged file contains "from mod import foo, bar"
+
+        Scenario: Merge agent preserves all test functions
+            Given scenario A adds test_foo() and scenario B adds test_bar()
+            When merge agent processes both
+            Then merged file contains both test functions
+
+        Scenario: Merge agent inserts markers above test functions
+            Given test function at line 10 with no marker
+            When merge agent processes scenario "Foo scenario"
+            Then "# BDD: Foo scenario" is inserted at line 10
+
+        Scenario: Merge agent handles duplicate markers
+            Given test already has "# BDD: Foo scenario"
+            When merge agent processes scenario "Foo scenario" again
+            Then it skips adding the duplicate marker
+
+        Scenario: Merge agent writes resolved file to staging
+            Given conflict resolved in memory
+            When merge agent commits
+            Then resolved file is added to git index with conflict markers removed
+
+        Scenario: Merge agent logs resolution decisions
+            Given merge conflict detected
+            When merge agent resolves
+            Then it writes merge_resolution.jsonl with timestamp, file, action
+
+    Feature: Integration Test Agent
+        As a framework developer
+        I want a dedicated agent to run post-merge integration tests
+        So that failures are caught and fixed before final commit
+
+        Scenario: Integration test agent runs full test suite
+            Given merge agent has merged 3 scenarios
+            When integration test agent runs
+            Then it executes all test files in tests/
+
+        Scenario: Integration test agent reports pass
+            Given all tests pass after merge
+            When integration test agent completes
+            Then it prints "[OK] All tests passing" and exits with code 0
+
+        Scenario: Integration test agent reports fail
+            Given tests fail after merge (e.g., syntax error from conflict)
+            When integration test agent completes
+            Then it prints "[FAIL] X tests failed" and exits with code 1
+
+        Scenario: Integration test agent attempts fix on failure
+            Given tests fail after merge
+            When integration test agent runs fix attempt
+            Then it analyzes failure output and suggests fix
+
+        Scenario: Integration test agent re-runs tests after fix
+            Given integration test agent suggests fix
+            When fix is applied and tests re-run
+            Then it reports pass or fail
+
+        Scenario: Integration test agent fails session on persistent failure
+            Given tests fail after 1 fix attempt
+            When integration test agent completes
+            Then orchestration marks scenario as THROWN AWAY
+
+        Scenario: Integration test agent writes test result log
+            Given integration test completes
+            When result is logged
+            Then test_results.jsonl contains scenario, pass_count, fail_count, duration_ms

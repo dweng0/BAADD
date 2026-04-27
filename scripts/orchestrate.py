@@ -32,6 +32,63 @@ from check_bdd_coverage import parse_scenarios, find_test_files, check_coverage
 from pm_worker import run_pm_pipeline, extract_scenario_block
 
 
+def run_merge_agent(scenario_results, main_dir):
+    """Run the merge agent to resolve conflicts before merging."""
+    print("    [MERGE AGENT] Resolving merge conflicts...", flush=True)
+    
+    # Write results to temp file for merge agent
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(scenario_results, f)
+        results_file = f.name
+    
+    try:
+        stdout, stderr, rc = run_cmd(
+            f"python3 scripts/merge_agent.py --main-dir . --results-file {results_file}",
+            cwd=main_dir,
+            timeout=60,
+        )
+        
+        if rc == 0:
+            print(f"    [MERGE AGENT] Success: {stdout}", flush=True)
+            return True, stdout
+        else:
+            print(f"    [MERGE AGENT] Failed: {stderr or stdout}", flush=True)
+            return False, stderr or stdout
+    finally:
+        if os.path.exists(results_file):
+            os.unlink(results_file)
+
+
+def run_integration_tests(scenario_results, main_dir):
+    """Run integration tests after merging."""
+    print("    [INTEGRATION TEST] Running post-merge tests...", flush=True)
+    
+    # Write results to temp file for integration test agent
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(scenario_results, f)
+        results_file = f.name
+    
+    try:
+        stdout, stderr, rc = run_cmd(
+            f"python3 scripts/integration_test_agent.py --main-dir . --results-file {results_file} --max-fix-attempts 1",
+            cwd=main_dir,
+            timeout=120,
+        )
+        
+        # Parse the output for pass/fail
+        if "[OK]" in stdout or rc == 0:
+            print(f"    [INTEGRATION TEST] PASSED", flush=True)
+            return True, stdout
+        else:
+            print(f"    [INTEGRATION TEST] FAILED: {stderr or stdout}", flush=True)
+            return False, stderr or stdout
+    finally:
+        if os.path.exists(results_file):
+            os.unlink(results_file)
+
+
 # Phase detection — log filename prefix → display label (in pipeline order)
 _PHASE_PREFIXES = [
     ("pm_plan",    "PM-PLAN"),
@@ -703,19 +760,11 @@ def merge_worker_result(result, main_dir):
             run_cmd("git merge --abort", cwd=main_dir)
             return False
 
-    # Post-merge verification
-    _, _, build_rc = run_cmd(
-        'eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$BUILD_CMD"',
-        cwd=main_dir,
-        timeout=120,
-    )
-    _, _, test_rc = run_cmd(
-        'eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$TEST_CMD"',
-        cwd=main_dir,
-        timeout=120,
-    )
-
-    if build_rc != 0 or test_rc != 0:
+    # Post-merge verification with integration test agent
+    # First, run integration tests to catch any issues
+    integration_success, integration_output = run_integration_tests([result], main_dir)
+    
+    if not integration_success:
         print(
             "    Post-merge verification FAILED — reverting merge (PM rejected)",
             flush=True,

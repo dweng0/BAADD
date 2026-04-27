@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 333 scenario(s) across 29 test file(s).
+Checked 347 scenario(s) across 30 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -250,7 +250,7 @@ Checked 333 scenario(s) across 29 test file(s).
 - [ ] UNCOVERED: Skip no-clobber files on update
 - [ ] UNCOVERED: Archive journals before update
 - [ ] UNCOVERED: Create BDD.md from template
-- [ ] UNCOVERED: Init git repo if missing
+- [x] Init git repo if missing
 - [ ] UNCOVERED: Create locks directory
 - [ ] UNCOVERED: Read manifest file list
 - [ ] UNCOVERED: Stamp version in manifest
@@ -435,10 +435,30 @@ Checked 333 scenario(s) across 29 test file(s).
 - [ ] UNCOVERED: Dashboard handles zero-width terminal gracefully
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
----
-**160/333 scenarios covered.**
+## Feature: Merge Agent for Conflict Resolution
 
-173 scenario(s) need tests:
+- [ ] UNCOVERED: Merge agent detects merge conflicts
+- [ ] UNCOVERED: Merge agent combines imports from multiple scenarios
+- [ ] UNCOVERED: Merge agent preserves all test functions
+- [ ] UNCOVERED: Merge agent inserts markers above test functions
+- [ ] UNCOVERED: Merge agent handles duplicate markers
+- [ ] UNCOVERED: Merge agent writes resolved file to staging
+- [ ] UNCOVERED: Merge agent logs resolution decisions
+
+## Feature: Integration Test Agent
+
+- [x] Integration test agent runs full test suite
+- [ ] UNCOVERED: Integration test agent reports pass
+- [ ] UNCOVERED: Integration test agent reports fail
+- [x] Integration test agent attempts fix on failure
+- [ ] UNCOVERED: Integration test agent re-runs tests after fix
+- [ ] UNCOVERED: Integration test agent fails session on persistent failure
+- [ ] UNCOVERED: Integration test agent writes test result log
+
+---
+**163/347 scenarios covered.**
+
+184 scenario(s) need tests:
 - Fallback to BDD.md order on AI failure
 - Select top N scenarios for parallel run
 - Create worktrees for parallel scenarios
@@ -485,7 +505,6 @@ Checked 333 scenario(s) across 29 test file(s).
 - Skip no-clobber files on update
 - Archive journals before update
 - Create BDD.md from template
-- Init git repo if missing
 - Create locks directory
 - Read manifest file list
 - Stamp version in manifest
@@ -612,3 +631,15 @@ Checked 333 scenario(s) across 29 test file(s).
 - render_progress_bar always returns a string of exactly bar_width characters
 - Dashboard handles zero-width terminal gracefully
 - stdout reader thread sets a threading.Event when subprocess stdout is exhausted
+- Merge agent detects merge conflicts
+- Merge agent combines imports from multiple scenarios
+- Merge agent preserves all test functions
+- Merge agent inserts markers above test functions
+- Merge agent handles duplicate markers
+- Merge agent writes resolved file to staging
+- Merge agent logs resolution decisions
+- Integration test agent reports pass
+- Integration test agent reports fail
+- Integration test agent re-runs tests after fix
+- Integration test agent fails session on persistent failure
+- Integration test agent writes test result log
