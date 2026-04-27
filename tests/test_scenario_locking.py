@@ -6,7 +6,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from scenario_locking import scenario_to_slug, is_pid_alive, check_and_remove_stale_lock
+from scenario_locking import scenario_to_slug, is_pid_alive, check_and_remove_stale_lock, release_lock
 
 
 # BDD: Generate scenario slug from name
@@ -63,6 +63,25 @@ def test_detect_stale_lock_from_dead_pid():
         result = check_and_remove_stale_lock(lock_path)
         assert result is True
         assert not os.path.exists(lock_path)
+
+
+# BDD: Release lock on completion
+def test_release_lock_on_completion():
+    """Lock file is deleted when agent completes scenario implementation."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        slug = "my-scenario"
+        lock_path = os.path.join(tmpdir, f"{slug}.lock")
+        with open(lock_path, "w") as f:
+            f.write(f"PID={os.getpid()}\nSCENARIO=My Scenario\nDATE=2026-01-01\n")
+        assert os.path.exists(lock_path)
+        release_lock(tmpdir, slug)
+        assert not os.path.exists(lock_path)
+
+
+def test_release_lock_missing_file_no_error():
+    """release_lock does not raise if lock file already gone."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        release_lock(tmpdir, "nonexistent-scenario")
 
 
 def test_stale_lock_live_pid_not_removed():

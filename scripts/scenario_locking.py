@@ -69,3 +69,12 @@ def check_and_remove_stale_lock(lock_path: str) -> bool:
         return True
 
     return False
+
+
+def release_lock(locks_dir: str, slug: str) -> None:
+    """Delete the lock file for the given slug, if it exists."""
+    lock_path = os.path.join(locks_dir, f"{slug}.lock")
+    try:
+        os.remove(lock_path)
+    except OSError:
+        pass
