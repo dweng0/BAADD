@@ -156,7 +156,7 @@ Checked 333 scenario(s) across 28 test file(s).
 - [x] Generate scenario slug from name
 - [x] Slug truncates to 60 characters
 - [x] Check for existing lock file
-- [ ] UNCOVERED: Detect stale lock from dead PID
+- [x] Detect stale lock from dead PID
 - [x] Write lock file with session metadata
 - [ ] UNCOVERED: Release lock on completion
 - [ ] UNCOVERED: Clean up lock on early exit
@@ -436,10 +436,9 @@ Checked 333 scenario(s) across 28 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**147/333 scenarios covered.**
+**148/333 scenarios covered.**
 
-186 scenario(s) need tests:
-- Detect stale lock from dead PID
+185 scenario(s) need tests:
 - Release lock on completion
 - Clean up lock on early exit
 - Find uncovered scenarios for orchestration
