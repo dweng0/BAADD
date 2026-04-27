@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 333 scenario(s) across 24 test file(s).
+Checked 333 scenario(s) across 25 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -108,11 +108,11 @@ Checked 333 scenario(s) across 24 test file(s).
 
 ## Feature: Issue Formatting for Agent
 
-- [ ] UNCOVERED: Format issue as markdown
-- [ ] UNCOVERED: Truncate long issue body
-- [ ] UNCOVERED: Sort issues by reaction count
+- [x] Format issue as markdown
+- [x] Truncate long issue body
+- [x] Sort issues by reaction count
 - [x] Mark user content with boundaries
-- [ ] UNCOVERED: Warn about untrusted content
+- [x] Warn about untrusted content
 
 ## Feature: Bootstrap Script
 
@@ -436,13 +436,9 @@ Checked 333 scenario(s) across 24 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**105/333 scenarios covered.**
+**109/333 scenarios covered.**
 
-228 scenario(s) need tests:
-- Format issue as markdown
-- Truncate long issue body
-- Sort issues by reaction count
-- Warn about untrusted content
+224 scenario(s) need tests:
 - Scaffold TypeScript React project
 - Scaffold Python project
 - Scaffold Rust project
