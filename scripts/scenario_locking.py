@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Scenario locking utilities for parallel agent execution."""
 
+import os
 import re
 
 
@@ -28,5 +29,43 @@ def scenario_to_slug(scenario_name: str) -> str:
     
     # Truncate to 60 characters
     slug = slug[:60]
-    
+
     return slug
+
+
+def is_pid_alive(pid: int) -> bool:
+    """Return True if a process with the given PID is currently running."""
+    try:
+        return os.path.exists(f"/proc/{pid}")
+    except (ValueError, TypeError):
+        return False
+
+
+def check_and_remove_stale_lock(lock_path: str) -> bool:
+    """Check if a lock file is stale (dead PID) and remove it if so.
+
+    Returns True if the lock was stale and removed, False if the lock is live.
+    """
+    try:
+        with open(lock_path) as f:
+            content = f.read()
+    except OSError:
+        return True
+
+    pid = None
+    for line in content.splitlines():
+        if line.startswith("PID="):
+            try:
+                pid = int(line.split("=", 1)[1].strip())
+            except (ValueError, IndexError):
+                pass
+            break
+
+    if pid is None or not is_pid_alive(pid):
+        try:
+            os.remove(lock_path)
+        except OSError:
+            pass
+        return True
+
+    return False

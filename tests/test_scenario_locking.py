@@ -3,9 +3,10 @@
 
 import os
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-from scenario_locking import scenario_to_slug
+from scenario_locking import scenario_to_slug, is_pid_alive, check_and_remove_stale_lock
 
 
 # BDD: Generate scenario slug from name
@@ -42,3 +43,37 @@ def test_slug_truncates_to_60_characters():
     over_name = "A" * 61
     slug = scenario_to_slug(over_name)
     assert len(slug) == 60
+
+
+# BDD: Detect stale lock from dead PID
+def test_detect_stale_lock_from_dead_pid():
+    """Lock file with dead PID is detected as stale, removed, and scenario can be claimed."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        lock_path = os.path.join(tmpdir, "my-scenario.lock")
+        # PID 1 is always alive (init/systemd), use a PID that can't be alive
+        # Find a PID that is definitely dead by using a very large number
+        dead_pid = 2147483647  # max int32, virtually never a live PID
+        with open(lock_path, "w") as f:
+            f.write(f"PID={dead_pid}\nSCENARIO=my scenario\nDATE=2026-01-01\n")
+
+        # Dead PID should not be alive
+        assert not is_pid_alive(dead_pid)
+
+        # check_and_remove_stale_lock should remove it and return True (stale)
+        result = check_and_remove_stale_lock(lock_path)
+        assert result is True
+        assert not os.path.exists(lock_path)
+
+
+def test_stale_lock_live_pid_not_removed():
+    """Lock file with live PID is NOT removed."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        lock_path = os.path.join(tmpdir, "my-scenario.lock")
+        live_pid = os.getpid()
+        with open(lock_path, "w") as f:
+            f.write(f"PID={live_pid}\nSCENARIO=my scenario\nDATE=2026-01-01\n")
+
+        assert is_pid_alive(live_pid)
+        result = check_and_remove_stale_lock(lock_path)
+        assert result is False
+        assert os.path.exists(lock_path)
