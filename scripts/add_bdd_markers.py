@@ -98,6 +98,19 @@ def find_test_line(content, scenario_name):
     return None, None
 
 
+def has_existing_marker(lines, line_index, scenario_name):
+    """Check whether the line immediately above line_index already contains
+    a BDD marker for the given scenario name.
+
+    Returns True if the marker exists, False otherwise.
+    """
+    return (
+        line_index > 0
+        and "BDD:" in lines[line_index - 1]
+        and scenario_name.lower() in lines[line_index - 1].lower()
+    )
+
+
 def add_marker_to_file(filepath, line_index, scenario_name, prefix):
     """Insert a BDD marker comment above the given line. Returns the modified content."""
     with open(filepath) as f:
@@ -106,11 +119,7 @@ def add_marker_to_file(filepath, line_index, scenario_name, prefix):
     marker = f"{prefix} BDD: {scenario_name}\n"
 
     # Check if marker already exists on the line above
-    if (
-        line_index > 0
-        and "BDD:" in lines[line_index - 1]
-        and scenario_name.lower() in lines[line_index - 1].lower()
-    ):
+    if has_existing_marker(lines, line_index, scenario_name):
         return None  # Already has marker
 
     # Get the indentation of the test line
