@@ -1,5 +1,15 @@
 # Journal
 
+
+## 2026-04-27 21:36 — Orchestrator session
+
+Ran 4 agents across 1 round(s) (max 4 concurrent per round). Total agent time: 1611s.
+
+**Merged (2):** Setup Python dependencies, Setup Go dependencies
+**Failed (2):** Setup Node dependencies, Setup Rust toolchain
+
+Coverage: 166/347 scenarios.
+
 ## 2026-04-27 21:39 — Setup Python dependencies
 
 The PM designed a content-verification test for the `scripts/setup_env.sh` shell script, asserting it contains a `python)` case with a `requirements.txt` existence guard and `pip install -r requirements.txt` command. The SE built `tests/test_setup_env.py` with `test_setup_python_dependencies` that reads the shell script and verifies all three assertions via string matching. The tester confirmed all 143 tests pass, the BDD marker is correctly placed, coverage shows `[x]` for this scenario, and the implementation matches the PLAN.md design (minor cosmetic omission of `-> None` return type has no functional impact).
