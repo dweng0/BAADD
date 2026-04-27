@@ -158,7 +158,7 @@ Checked 333 scenario(s) across 28 test file(s).
 - [x] Check for existing lock file
 - [x] Detect stale lock from dead PID
 - [x] Write lock file with session metadata
-- [ ] UNCOVERED: Release lock on completion
+- [x] Release lock on completion
 - [ ] UNCOVERED: Clean up lock on early exit
 
 ## Feature: Git Worktree Isolation
@@ -264,7 +264,7 @@ Checked 333 scenario(s) across 28 test file(s).
 - [ ] UNCOVERED: Never modify scripts/evolve.sh
 - [ ] UNCOVERED: Never modify .github/workflows/
 - [ ] UNCOVERED: Only build features from BDD.md
-- [ ] UNCOVERED: Never delete tests
+- [x] Never delete tests
 
 ## Feature: Error Recovery
 
@@ -436,10 +436,9 @@ Checked 333 scenario(s) across 28 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**148/333 scenarios covered.**
+**150/333 scenarios covered.**
 
-185 scenario(s) need tests:
-- Release lock on completion
+183 scenario(s) need tests:
 - Clean up lock on early exit
 - Find uncovered scenarios for orchestration
 - AI-powered scenario ordering
@@ -507,7 +506,6 @@ Checked 333 scenario(s) across 28 test file(s).
 - Never modify scripts/evolve.sh
 - Never modify .github/workflows/
 - Only build features from BDD.md
-- Never delete tests
 - API error causes retry exit
 - Post-merge verification catches breakage
 - Timeout kills long session
