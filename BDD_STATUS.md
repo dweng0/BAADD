@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 333 scenario(s) across 25 test file(s).
+Checked 333 scenario(s) across 26 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -116,15 +116,15 @@ Checked 333 scenario(s) across 25 test file(s).
 
 ## Feature: Bootstrap Script
 
-- [ ] UNCOVERED: Scaffold TypeScript React project
-- [ ] UNCOVERED: Scaffold Python project
-- [ ] UNCOVERED: Scaffold Rust project
-- [ ] UNCOVERED: Create CI workflow for TypeScript
-- [ ] UNCOVERED: Create CI workflow for Python
-- [ ] UNCOVERED: Verify build passes before marking initialized
-- [ ] UNCOVERED: Create Day 0 journal entry
-- [ ] UNCOVERED: Write fallback journal if agent skips
-- [ ] UNCOVERED: Seed journal index on bootstrap
+- [x] Scaffold TypeScript React project
+- [x] Scaffold Python project
+- [x] Scaffold Rust project
+- [x] Create CI workflow for TypeScript
+- [x] Create CI workflow for Python
+- [x] Verify build passes before marking initialized
+- [x] Create Day 0 journal entry
+- [x] Write fallback journal if agent skips
+- [x] Seed journal index on bootstrap
 
 ## Feature: Evolution Script
 
@@ -139,7 +139,7 @@ Checked 333 scenario(s) across 25 test file(s).
 - [ ] UNCOVERED: Retry fix on build failure
 - [ ] UNCOVERED: Revert session on persistent failure
 - [ ] UNCOVERED: Write journal if agent skipped
-- [ ] UNCOVERED: Write fallback journal if agent still skips
+- [x] Write fallback journal if agent still skips
 - [ ] UNCOVERED: Update journal index after session
 - [ ] UNCOVERED: Comment and close implemented issues
 - [ ] UNCOVERED: Push changes after session
@@ -242,7 +242,7 @@ Checked 333 scenario(s) across 25 test file(s).
 
 ## Feature: Install Script
 
-- [ ] UNCOVERED: Init new baadd project
+- [x] Init new baadd project
 - [ ] UNCOVERED: Update existing baadd project
 - [ ] UNCOVERED: Auto-detect update mode
 - [ ] UNCOVERED: Pin to specific version
@@ -436,18 +436,9 @@ Checked 333 scenario(s) across 25 test file(s).
 - [ ] UNCOVERED: stdout reader thread sets a threading.Event when subprocess stdout is exhausted
 
 ---
-**109/333 scenarios covered.**
+**120/333 scenarios covered.**
 
-224 scenario(s) need tests:
-- Scaffold TypeScript React project
-- Scaffold Python project
-- Scaffold Rust project
-- Create CI workflow for TypeScript
-- Create CI workflow for Python
-- Verify build passes before marking initialized
-- Create Day 0 journal entry
-- Write fallback journal if agent skips
-- Seed journal index on bootstrap
+213 scenario(s) need tests:
 - Check starting build state
 - Continue with failing tests
 - Exit if build broken at start
@@ -458,7 +449,6 @@ Checked 333 scenario(s) across 25 test file(s).
 - Retry fix on build failure
 - Revert session on persistent failure
 - Write journal if agent skipped
-- Write fallback journal if agent still skips
 - Update journal index after session
 - Comment and close implemented issues
 - Push changes after session
@@ -526,7 +516,6 @@ Checked 333 scenario(s) across 25 test file(s).
 - Release includes install.sh
 - Docs workflow triggers on docs path change
 - Docs deployment to GitHub Pages
-- Init new baadd project
 - Update existing baadd project
 - Auto-detect update mode
 - Pin to specific version
