@@ -363,3 +363,38 @@ print("provider:" + str(detect_provider()))
         finally:
             os.unlink(script_path)
 
+
+# BDD: Empty stdin prompt error
+def test_empty_stdin_prompt_error():
+    """Test that agent.py prints error when no prompt provided on stdin."""
+    scripts_dir = os.path.abspath("scripts")
+    agent_path = os.path.abspath("scripts/agent.py")
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Copy agent.py to tmpdir
+        import shutil
+        shutil.copy(agent_path, os.path.join(tmpdir, 'agent.py'))
+        shutil.copy(os.path.join(scripts_dir, 'parse_poppins_config.py'), 
+                   os.path.join(tmpdir, 'parse_poppins_config.py'))
+        
+        env = os.environ.copy()
+        env['ANTHROPIC_API_KEY'] = 'sk-ant-test-key'
+        for key in ['MOONSHOT_API_KEY', 'DASHSCOPE_API_KEY', 
+                    'OPENAI_API_KEY', 'GROQ_API_KEY', 'CUSTOM_API_KEY', 'CUSTOM_BASE_URL', 'OLLAMA_HOST']:
+            env.pop(key, None)
+        
+        # Run agent with empty stdin
+        result = subprocess.run(
+            [sys.executable, agent_path],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=tmpdir,
+            input="",
+        )
+        
+        # Should exit with code 1 and print error
+        assert result.returncode == 1, f"Expected exit code 1, got {result.returncode}"
+        assert "ERROR: no prompt provided on stdin" in result.stderr, \
+            f"Expected stdin error, got: {result.stderr}"
+
