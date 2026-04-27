@@ -29,6 +29,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from parse_poppins_config import get_config as _get_poppins_config
+
 # Per-phase agent timeouts (seconds).  PM-plan and SE need more time than Tester/Accept.
 TIMEOUT_PM_PLAN   = 720
 TIMEOUT_SE        = 900
@@ -37,9 +39,10 @@ TIMEOUT_PM_ACCEPT = 360
 
 MAX_RETRIES = 3
 
-# Existing files the SE must never modify. Any git-tracked path that matches
-# one of these prefixes is protected — violation causes immediate reset + retry.
-PROTECTED_PATHS = [
+# Existing files the SE must never modify. Loaded from poppins.yml
+# agent.protected_paths; falls back to built-in defaults.
+_poppins_cfg = _get_poppins_config()
+PROTECTED_PATHS = _poppins_cfg.get("agent", {}).get("protected_paths") or [
     "scripts/",
     ".github/",
     "IDENTITY.md",

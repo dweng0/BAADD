@@ -34,6 +34,13 @@ DEFAULTS = {
         "session_timeout": 3600,
         "context_window_limit": 100000,
         "default_model": "claude-haiku-4-5-20251001",
+        "protected_paths": [
+            "scripts/",
+            ".github/",
+            "IDENTITY.md",
+            "BDD.md",
+            "conftest.py",
+        ],
     },
 }
 
@@ -53,9 +60,11 @@ def find_config():
 
 def parse_yaml_simple(path):
     """Minimal YAML parser for flat/one-level-nested key: value files.
+    Supports string/int/bool values and single-level lists (- item).
     Avoids requiring PyYAML as a dependency."""
     result = {}
     current_section = None
+    current_list_key = None  # last key with empty value — may be a list
 
     with open(path) as f:
         for line in f:
@@ -65,13 +74,26 @@ def parse_yaml_simple(path):
                 continue
 
             indent = len(line) - len(line.lstrip())
+            lstripped = stripped.lstrip()
 
             if indent == 0 and stripped.endswith(":"):
                 current_section = stripped[:-1].strip()
                 result[current_section] = {}
+                current_list_key = None
+                continue
+
+            # List item — append to current_list_key
+            if lstripped.startswith("- "):
+                item = lstripped[2:].strip().strip('"').strip("'")
+                if current_list_key is not None:
+                    container = result[current_section] if current_section else result
+                    if not isinstance(container.get(current_list_key), list):
+                        container[current_list_key] = []
+                    container[current_list_key].append(item)
                 continue
 
             if ":" in stripped:
+                current_list_key = None
                 key, _, value = stripped.partition(":")
                 key = key.strip()
                 value = value.strip()
@@ -80,6 +102,14 @@ def parse_yaml_simple(path):
                     value = ""
                 elif "#" in value:
                     value = value[: value.index("#")].strip()
+
+                if value == "":
+                    current_list_key = key
+                    if current_section and indent > 0:
+                        result.setdefault(current_section, {})[key] = ""
+                    else:
+                        result[key] = ""
+                    continue
 
                 if value.lower() in ("true", "yes"):
                     value = True

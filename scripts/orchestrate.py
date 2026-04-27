@@ -309,6 +309,29 @@ def resolve_model_and_client(provider, model_override=None):
     return model, call
 
 
+SCENARIO_ORDER_FILE = "scenario_order.md"
+
+
+def load_cached_order(path):
+    """Load scenario order from cache file. Returns list or None if missing/empty."""
+    try:
+        with open(path) as f:
+            lines = f.readlines()
+        names = [line[2:].strip() for line in lines if line.strip().startswith("- ")]
+        return names if names else None
+    except FileNotFoundError:
+        return None
+
+
+def save_scenario_order(path, ordered_names):
+    """Persist ordered scenario list to cache file."""
+    with open(path, "w") as f:
+        f.write("# Scenario Order\n")
+        f.write(f"<!-- generated: {time.strftime('%Y-%m-%d %H:%M')} -->\n\n")
+        for name in ordered_names:
+            f.write(f"- {name}\n")
+
+
 def plan_scenario_order(uncovered, bdd_content, provider, model_override=None):
     """Use a single AI call to order scenarios by dependency and priority.
 
@@ -853,12 +876,28 @@ def main():
         print(f"    - [{feature}] {scenario}", flush=True)
     print("", flush=True)
 
-    # Step 2: AI-powered ordering
-    print("  Ordering scenarios...", flush=True)
+    # Step 2: AI-powered ordering (with cache)
+    uncovered_names = [s for _, s in uncovered]
     bdd_content = read_file_safe(args.bdd)
-    ordered_names = plan_scenario_order(
-        uncovered, bdd_content, provider, model_orch_override
-    )
+    cached = load_cached_order(SCENARIO_ORDER_FILE)
+    if cached is not None and set(uncovered_names).issubset(set(cached)):
+        # All current uncovered scenarios present in cache — use cached order
+        ordered_names = [s for s in cached if s in set(uncovered_names)]
+        missing = [s for s in uncovered_names if s not in set(cached)]
+        if missing:
+            ordered_names = ordered_names + missing
+        print(f"  Using cached scenario order from {SCENARIO_ORDER_FILE}", flush=True)
+    else:
+        if cached is not None:
+            print(f"  Cached order stale (new scenarios in BDD.md) — re-ordering...", flush=True)
+        else:
+            print("  Ordering scenarios...", flush=True)
+        ordered_names = plan_scenario_order(
+            uncovered, bdd_content, provider, model_orch_override
+        )
+        save_scenario_order(SCENARIO_ORDER_FILE, ordered_names)
+        print(f"  Saved order to {SCENARIO_ORDER_FILE}", flush=True)
+
     print("  Execution order:", flush=True)
     for i, name in enumerate(ordered_names, 1):
         print(f"    {i}. {name}", flush=True)
