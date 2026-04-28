@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-28 13:25 — Orchestrator session
+
+Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 948s.
+
+**Failed (3):** Skip unknown language gracefully, Setup Go dependencies, Always install agent dependencies
+
+Coverage: 273/347 scenarios.
+
+
 ## 2026-04-28 13:18 — Orchestrator session
 
 Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 539s.
