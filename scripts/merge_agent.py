@@ -76,7 +76,6 @@ def insert_marker_above_line(content, line_index, scenario_name, prefix):
 def resolve_import_conflict(content_a, content_b, filepath):
     """Resolve import conflicts between two versions of a file."""
     ext = os.path.splitext(filepath)[1].lower()
-    prefix = detect_comment_prefix(filepath)
     
     # Parse imports from both versions
     imports_a = []
@@ -115,7 +114,9 @@ def resolve_import_conflict(content_a, content_b, filepath):
         if module is None:
             # Simple import statement
             for item in items:
-                merged_imports[None] = merged_imports.get(None, []) + [item]
+                if None not in merged_imports:
+                    merged_imports[None] = []
+                merged_imports[None].append(item)
         else:
             if module not in merged_imports:
                 merged_imports[module] = []
@@ -123,7 +124,13 @@ def resolve_import_conflict(content_a, content_b, filepath):
     
     # Build merged import section
     import_lines = []
-    for module, items in sorted(merged_imports.items()):
+    # Sort with None at the end
+    sorted_modules = sorted([m for m in merged_imports.keys() if m is not None])
+    if None in merged_imports:
+        sorted_modules.append(None)
+    
+    for module in sorted_modules:
+        items = merged_imports[module]
         unique_items = sorted(set(items))
         if module is None:
             import_lines.append(f"import {', '.join(unique_items)}\n")
@@ -163,29 +170,36 @@ def resolve_import_conflict(content_a, content_b, filepath):
 
 
 def resolve_file_merge(file_path, content_a, content_b, scenario_a, scenario_b, main_dir):
-    """Resolve merge conflict between two file versions."""
+    """Resolve merge conflict between two file versions using AI when possible."""
     log_path = os.path.join(main_dir, "merge_resolution.jsonl")
     
     # Check for syntax errors from conflict markers
     if "<<<<<<" in content_a or "======" in content_a or ">>>>>>" in content_a:
-        content_a = content_a.replace("<<<<<<< HEAD\n", "")
-        content_a = content_a.replace("=======\n", "")
-        content_a = content_a.replace(">>>>>>> agent/\n", "")
-        content_a = content_a.replace(">>>>>>> \n", "")
-        log_event(log_path, "conflict_marker_removed", file=file_path)
+        content_a = re.sub(r'<<<<<<< HEAD\n', '', content_a)
+        content_a = re.sub(r'=======\n', '', content_a)
+        content_a = re.sub(r'>>>>>>> agent/[^\n]+\n', '', content_a)
+        content_a = re.sub(r'>>>>>>> [^\n]+\n', '', content_a)
+        log_event(log_path, "conflict_marker_removed", file=file_path, version="A")
     
     if "<<<<<<" in content_b or "======" in content_b or ">>>>>>" in content_b:
-        content_b = content_b.replace("<<<<<<< HEAD\n", "")
-        content_b = content_b.replace("=======\n", "")
-        content_b = content_b.replace(">>>>>>> agent/\n", "")
-        content_b = content_b.replace(">>>>>>> \n", "")
-        log_event(log_path, "conflict_marker_removed", file=file_path)
+        content_b = re.sub(r'<<<<<<< HEAD\n', '', content_b)
+        content_b = re.sub(r'=======\n', '', content_b)
+        content_b = re.sub(r'>>>>>>> agent/[^\n]+\n', '', content_b)
+        content_b = re.sub(r'>>>>>>> [^\n]+\n', '', content_b)
+        log_event(log_path, "conflict_marker_removed", file=file_path, version="B")
     
     # Check if files are identical
     if content_a == content_b:
         return content_a, "identical"
     
-    # Check for import conflicts
+    # Try to use AI merge if anthropic is available
+    try:
+        import anthropic
+        return _resolve_file_merge_with_ai(file_path, content_a, content_b, scenario_a, scenario_b, main_dir)
+    except ImportError:
+        pass
+    
+    # Fallback: check for import conflicts
     ext = os.path.splitext(file_path)[1].lower()
     if ext in (".py",):
         # Try to detect and merge import statements
@@ -271,6 +285,63 @@ def resolve_file_merge(file_path, content_a, content_b, scenario_a, scenario_b, 
     return "".join(merged_lines), "merged"
 
 
+def _resolve_file_merge_with_ai(file_path, content_a, content_b, scenario_a, scenario_b, main_dir):
+    """Use AI to intelligently merge conflicting file versions."""
+    import anthropic
+    
+    log_path = os.path.join(main_dir, "merge_resolution.jsonl")
+    
+    # Use AI to intelligently merge the two versions
+    client = anthropic.Anthropic()
+    
+    prompt = f"""You are a merge conflict resolver. You need to merge two versions of a Python test file.
+
+Scenario A (first branch): {scenario_a}
+Scenario B (second branch): {scenario_b}
+
+File: {file_path}
+
+--- VERSION A (HEAD) ---
+{content_a}
+
+--- VERSION B (branch) ---
+{content_b}
+
+Please intelligently merge these two versions:
+1. Keep both versions of test functions if they test different things
+2. Merge import statements from both versions
+3. Keep BDD markers from both scenarios if they exist
+4. Ensure the merged file has valid Python syntax
+5. Return ONLY the merged file content, no explanations
+
+Return the merged file content."""
+    
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=8192,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        
+        merged_content = response.content[0].text.strip()
+        
+        # Clean up any markdown formatting
+        if merged_content.startswith("```python"):
+            merged_content = merged_content.replace("```python", "").replace("```", "").strip()
+        elif merged_content.startswith("```"):
+            merged_content = merged_content.replace("```", "").strip()
+        
+        log_event(log_path, "ai_merge_success", file=file_path, 
+                 scenario_a=scenario_a, scenario_b=scenario_b)
+        
+        return merged_content, "ai_merged"
+    
+    except Exception as e:
+        log_event(log_path, "ai_merge_failed", file=file_path, error=str(e))
+        # Fallback to simple resolution
+        return resolve_file_merge(file_path, content_a, content_b, scenario_a, scenario_b, main_dir)
+
+
 def merge_results(scenario_results, main_dir):
     """Merge multiple scenario results into main branch."""
     log_path = os.path.join(main_dir, "merge_resolution.jsonl")
@@ -345,10 +416,10 @@ def merge_results(scenario_results, main_dir):
                     content = f.read()
                 
                 # Remove conflict markers
-                content = content.replace("<<<<<<< HEAD\n", "")
-                content = content.replace("=======\n", "")
-                content = content.replace(">>>>>>> agent/", "")
-                content = content.replace(">>>>>>> \n", "")
+                content = re.sub(r'<<<<<<< HEAD\n', '', content)
+                content = re.sub(r'=======\n', '', content)
+                content = re.sub(r'>>>>>>> agent/[^\n]+\n', '', content)
+                content = re.sub(r'>>>>>>> [^\n]+\n', '', content)
                 
                 # Write resolved content
                 with open(file_path, "w") as f:

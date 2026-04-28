@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 347 scenario(s) across 31 test file(s).
+Checked 347 scenario(s) across 32 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -230,7 +230,7 @@ Checked 347 scenario(s) across 31 test file(s).
 - [ ] UNCOVERED: Manual workflow dispatch
 - [ ] UNCOVERED: Bootstrap detection in workflow
 - [ ] UNCOVERED: Workflow timeout limit
-- [ ] UNCOVERED: Retry after first attempt failure
+- [x] Retry after first attempt failure
 - [ ] UNCOVERED: Retry after second attempt failure
 - [ ] UNCOVERED: Configure git bot identity
 - [ ] UNCOVERED: GitHub Actions log grouping
@@ -437,8 +437,8 @@ Checked 347 scenario(s) across 31 test file(s).
 
 ## Feature: Merge Agent for Conflict Resolution
 
-- [ ] UNCOVERED: Merge agent detects merge conflicts
-- [ ] UNCOVERED: Merge agent combines imports from multiple scenarios
+- [x] Merge agent detects merge conflicts
+- [x] Merge agent combines imports from multiple scenarios
 - [ ] UNCOVERED: Merge agent preserves all test functions
 - [ ] UNCOVERED: Merge agent inserts markers above test functions
 - [ ] UNCOVERED: Merge agent handles duplicate markers
@@ -448,17 +448,17 @@ Checked 347 scenario(s) across 31 test file(s).
 ## Feature: Integration Test Agent
 
 - [x] Integration test agent runs full test suite
-- [ ] UNCOVERED: Integration test agent reports pass
-- [ ] UNCOVERED: Integration test agent reports fail
+- [x] Integration test agent reports pass
+- [x] Integration test agent reports fail
 - [x] Integration test agent attempts fix on failure
 - [ ] UNCOVERED: Integration test agent re-runs tests after fix
 - [ ] UNCOVERED: Integration test agent fails session on persistent failure
 - [ ] UNCOVERED: Integration test agent writes test result log
 
 ---
-**166/347 scenarios covered.**
+**171/347 scenarios covered.**
 
-181 scenario(s) need tests:
+176 scenario(s) need tests:
 - Fallback to BDD.md order on AI failure
 - Select top N scenarios for parallel run
 - Create worktrees for parallel scenarios
@@ -486,7 +486,6 @@ Checked 347 scenario(s) across 31 test file(s).
 - Manual workflow dispatch
 - Bootstrap detection in workflow
 - Workflow timeout limit
-- Retry after first attempt failure
 - Retry after second attempt failure
 - Configure git bot identity
 - GitHub Actions log grouping
@@ -628,15 +627,11 @@ Checked 347 scenario(s) across 31 test file(s).
 - render_progress_bar always returns a string of exactly bar_width characters
 - Dashboard handles zero-width terminal gracefully
 - stdout reader thread sets a threading.Event when subprocess stdout is exhausted
-- Merge agent detects merge conflicts
-- Merge agent combines imports from multiple scenarios
 - Merge agent preserves all test functions
 - Merge agent inserts markers above test functions
 - Merge agent handles duplicate markers
 - Merge agent writes resolved file to staging
 - Merge agent logs resolution decisions
-- Integration test agent reports pass
-- Integration test agent reports fail
 - Integration test agent re-runs tests after fix
 - Integration test agent fails session on persistent failure
 - Integration test agent writes test result log

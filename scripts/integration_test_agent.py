@@ -85,8 +85,10 @@ def analyze_test_failure(stdout, stderr, rc):
     if "BDD marker" in stdout or "BDD marker" in stderr:
         suggestions.append("Add '# BDD: <scenario>' markers to test functions")
     
-    # Check for merge conflict markers
+    # Check for merge conflict markers - THIS IS CRITICAL
     if "<<<<<<" in stdout or "<<<<<<" in stderr:
+        suggestions.append("Remove merge conflict markers from files")
+    if "SyntaxError" in stdout and "<<" in stdout:
         suggestions.append("Remove merge conflict markers from files")
     
     return suggestions
@@ -99,20 +101,41 @@ def fix_test_failure(main_dir, suggestions):
     fixes_applied = 0
     
     for suggestion in suggestions:
-        # Try to fix missing markers
-        if "BDD marker" in suggestion:
-            # Run add_bdd_markers.py to add missing markers
-            stdout, stderr, rc = run_cmd(
-                "python3 scripts/add_bdd_markers.py --apply",
+        # Remove merge conflict markers FIRST - this is critical
+        if "merge conflict markers" in suggestion:
+            # Find all Python files with conflict markers
+            files_with_conflicts, _, _ = run_cmd(
+                'grep -rl "<<<<<<" tests/ scripts/ src/ 2>/dev/null || true',
                 cwd=main_dir,
-                timeout=60,
+                timeout=30,
             )
-            if rc == 0:
-                fixes_applied += 1
-                log_event(log_path, "fix_applied", fix="add_bdd_markers", success=True)
+            
+            for file_path in files_with_conflicts.splitlines():
+                file_path = file_path.strip()
+                if not file_path:
+                    continue
+                
+                try:
+                    with open(file_path) as f:
+                        content = f.read()
+                    
+                    # Remove conflict markers
+                    content = re.sub(r'<<<<<<< HEAD\n', '', content)
+                    content = re.sub(r'=======\n', '', content)
+                    content = re.sub(r'>>>>>>> agent/[^\n]+\n', '', content)
+                    content = re.sub(r'>>>>>>> [^\n]+\n', '', content)
+                    
+                    with open(file_path, 'w') as f:
+                        f.write(content)
+                    
+                    fixes_applied += 1
+                    log_event(log_path, "conflict_markers_removed", file=file_path)
+                    print(f"    [FIX] Removed conflict markers from {file_path}")
+                except Exception as e:
+                    log_event(log_path, "conflict_fix_failed", file=file_path, error=str(e))
         
         # Try to fix import issues
-        if "import" in suggestion.lower():
+        if "import" in suggestion.lower() and fixes_applied == 0:
             # Check for files with syntax errors
             files_out, _, _ = run_cmd(
                 "python3 -m py_compile scripts/*.py tests/*.py 2>&1 | grep -oP 'File.*?\\d+' | head -20",
