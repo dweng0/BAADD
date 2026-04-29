@@ -153,33 +153,37 @@ def test_run_agents_in_parallel_with_threadpoool_executor():
 # BDD: Create worktrees for parallel scenarios
 def test_create_worktrees_for_parallel_scenarios():
     """create_worktree creates isolated worktrees with unique branches for 3 scenarios."""
+    orig = os.getcwd()
     with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        os.system("git init > /dev/null 2>&1")
-        os.system("git config user.email 'test@example.com'")
-        os.system("git config user.name 'Test User'")
-        os.system("touch README.md && git add README.md && git commit -m 'init' > /dev/null 2>&1")
-        
-        main_dir = tmpdir
-        scenarios = ["Scenario 1", "Scenario 2", "Scenario 3"]
-        
-        worktrees = []
-        for scenario in scenarios:
-            slug = scenario_to_slug(scenario)
-            wt_path, branch = create_worktree(slug, main_dir)
-            worktrees.append((wt_path, branch, scenario))
-        
-        assert len(worktrees) == 3, f"Expected 3 worktrees, got {len(worktrees)}"
-        
-        for wt_path, branch, scenario in worktrees:
-            assert wt_path is not None, f"Worktree path should not be None for {scenario}"
-            assert branch is not None, f"Branch should not be None for {scenario}"
-            assert os.path.isdir(wt_path), f"Worktree directory should exist: {wt_path}"
-            assert branch.startswith("agent/"), f"Branch should start with 'agent/': {branch}"
-            assert scenario_to_slug(scenario) in branch, f"Branch should contain scenario slug: {branch}"
-        
-        branches = [branch for _, branch, _ in worktrees]
-        assert len(set(branches)) == 3, "All branches should be unique"
-        
-        wt_paths = [wt_path for wt_path, _, _ in worktrees]
-        assert len(set(wt_paths)) == 3, "All worktree paths should be unique"
+        try:
+            os.chdir(tmpdir)
+            os.system("git init > /dev/null 2>&1")
+            os.system("git config user.email 'test@example.com'")
+            os.system("git config user.name 'Test User'")
+            os.system("touch README.md && git add README.md && git commit -m 'init' > /dev/null 2>&1")
+
+            main_dir = tmpdir
+            scenarios = ["Scenario 1", "Scenario 2", "Scenario 3"]
+
+            worktrees = []
+            for scenario in scenarios:
+                slug = scenario_to_slug(scenario)
+                wt_path, branch = create_worktree(slug, main_dir)
+                worktrees.append((wt_path, branch, scenario))
+
+            assert len(worktrees) == 3, f"Expected 3 worktrees, got {len(worktrees)}"
+
+            for wt_path, branch, scenario in worktrees:
+                assert wt_path is not None, f"Worktree path should not be None for {scenario}"
+                assert branch is not None, f"Branch should not be None for {scenario}"
+                assert os.path.isdir(wt_path), f"Worktree directory should exist: {wt_path}"
+                assert branch.startswith("agent/"), f"Branch should start with 'agent/': {branch}"
+                assert scenario_to_slug(scenario) in branch, f"Branch should contain scenario slug: {branch}"
+
+            branches = [branch for _, branch, _ in worktrees]
+            assert len(set(branches)) == 3, "All branches should be unique"
+
+            wt_paths = [wt_path for wt_path, _, _ in worktrees]
+            assert len(set(wt_paths)) == 3, "All worktree paths should be unique"
+        finally:
+            os.chdir(orig)
