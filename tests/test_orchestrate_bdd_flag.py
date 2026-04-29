@@ -48,9 +48,10 @@ Feature: Test
         custom_path = f.name
 
     try:
-        # No test files exist for this unique scenario name
-        scenarios = get_uncovered_scenarios(custom_path)
-        names = [s[0] for s in scenarios]
+        # Mock find_test_files to return empty list so nothing is covered
+        with patch("orchestrate.find_test_files", return_value=[]):
+            scenarios = get_uncovered_scenarios(custom_path)
+        names = [s[1] for s in scenarios]
         assert unique_name in names, f"Expected '{unique_name}' in uncovered: {names}"
     finally:
         os.unlink(custom_path)
