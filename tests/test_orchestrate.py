@@ -9,23 +9,19 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from orchestrate import scenario_to_slug, get_uncovered_scenarios, plan_scenario_order
+from orchestrate import scenario_to_slug, get_uncovered_scenarios, plan_scenario_order, select_scenarios
 
 
 # BDD: Slug truncates to 60 characters
 def test_slug_truncates_to_60_characters():
     """Test that scenario_to_slug() truncates long names to max 60 characters."""
-    # Create a scenario name that is very long (100+ chars)
     long_name = "This is a very long scenario name that exceeds sixty characters and should be truncated properly"
-    
+
     slug = scenario_to_slug(long_name)
-    
-    # The slug should be at most 60 characters
+
     assert len(slug) <= 60, f"Slug length {len(slug)} exceeds 60 characters: {slug}"
-    
-    # The slug should still be a valid slug (lowercase, hyphens only for separators)
     assert slug == slug.lower(), "Slug should be lowercase"
-    assert all(c.isalnum() or c == '-' for c in slug), "Slug should only contain alphanumeric and hyphens"
+    assert all(c.isalnum() or c == "-" for c in slug), "Slug should only contain alphanumeric and hyphens"
 
 
 # BDD: Find uncovered scenarios for orchestration
@@ -96,7 +92,6 @@ def test_ai_powered_scenario_ordering():
     ]
     bdd_content = "Feature: Auth\n  Scenario: Setup database schema\n  Scenario: Create user account\n  Scenario: Login with valid credentials"
 
-    # AI reorders: login depends on account, account depends on schema
     ai_ordered = ["Setup database schema", "Create user account", "Login with valid credentials"]
     mock_call = MagicMock(return_value=json.dumps(ai_ordered))
 
@@ -125,3 +120,16 @@ def test_fallback_to_bdd_order_on_ai_failure():
 
     expected = ["Alpha scenario", "Beta scenario", "Gamma scenario"]
     assert result == expected, f"Expected BDD.md order on failure, got: {result}"
+
+
+# BDD: Select top N scenarios for parallel run
+def test_select_top_n_scenarios_for_parallel_run():
+    """select_scenarios(ordered_names, max_agents) returns only top N scenarios."""
+    ordered = [f"Scenario {i}" for i in range(1, 11)]  # 10 scenarios
+
+    selected, remaining = select_scenarios(ordered, max_agents=3)
+
+    assert len(selected) == 3, f"Expected 3 selected, got {len(selected)}"
+    assert selected == ["Scenario 1", "Scenario 2", "Scenario 3"]
+    assert len(remaining) == 7
+    assert remaining == [f"Scenario {i}" for i in range(4, 11)]

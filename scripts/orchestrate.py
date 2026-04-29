@@ -230,6 +230,13 @@ def scenario_to_slug(name):
     return slug[:60]
 
 
+def select_scenarios(ordered_names, max_agents):
+    """Return (selected, remaining) where selected is the top max_agents scenarios."""
+    selected = ordered_names[:max_agents]
+    remaining = ordered_names[max_agents:]
+    return selected, remaining
+
+
 def get_uncovered_scenarios(bdd_path="BDD.md"):
     """Return list of (feature, scenario) tuples that lack test coverage."""
     scenarios = parse_scenarios(bdd_path)
