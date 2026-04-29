@@ -1286,5 +1286,42 @@ def main():
     )
 
 
+def format_worker_output(result):
+    """Format worker result with scenario prefix for each output line.
+    
+    Args:
+        result: Dict with scenario, stdout, commits, tests_pass, elapsed_s, rc
+        
+    Returns:
+        Formatted string with scenario prefix on each line
+    """
+    scenario_name = result.get("scenario", "unknown")
+    stdout = result.get("stdout", "")
+    commits = result.get("commits", 0)
+    tests_pass = result.get("tests_pass", False)
+    elapsed_s = result.get("elapsed_s", 0)
+    rc = result.get("rc", 0)
+    
+    lines = []
+    
+    if stdout:
+        for line in stdout.split("\n"):
+            if line.strip():
+                lines.append(f"[{scenario_name}] {line}")
+    
+    status_parts = []
+    if commits == 0:
+        status_parts.append("FAIL: no commits")
+    elif not tests_pass:
+        status_parts.append("WARN: tests failing")
+    else:
+        status_parts.append("OK")
+    
+    status_str = ", ".join(status_parts)
+    lines.append(f"[{scenario_name}] {status_str} — {commits} commit(s), {elapsed_s:.1f}s, exit={rc}")
+    
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     main()
