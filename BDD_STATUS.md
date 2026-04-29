@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 347 scenario(s) across 54 test file(s).
+Checked 347 scenario(s) across 55 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -233,7 +233,7 @@ Checked 347 scenario(s) across 54 test file(s).
 - [x] Retry after first attempt failure
 - [x] Retry after second attempt failure
 - [x] Configure git bot identity
-- [ ] UNCOVERED: GitHub Actions log grouping
+- [x] GitHub Actions log grouping
 - [ ] UNCOVERED: Detect CI environment
 - [ ] UNCOVERED: Release workflow on version tag
 - [ ] UNCOVERED: Release includes install.sh
@@ -456,10 +456,9 @@ Checked 347 scenario(s) across 54 test file(s).
 - [ ] UNCOVERED: Integration test agent writes test result log
 
 ---
-**303/347 scenarios covered.**
+**304/347 scenarios covered.**
 
-44 scenario(s) need tests:
-- GitHub Actions log grouping
+43 scenario(s) need tests:
 - Detect CI environment
 - Release workflow on version tag
 - Release includes install.sh
