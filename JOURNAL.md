@@ -1,6 +1,15 @@
 # Journal
 
 
+## 2026-04-29 20:22 — Orchestrator session
+
+Ran 2 agents across 1 round(s) (max 2 concurrent per round). Total agent time: 2651s.
+
+**Failed (2):** read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl, sessions.jsonl is created if it does not exist
+
+Coverage: 351/432 scenarios.
+
+
 ## 2026-04-29 11:11 — Orchestrator session
 
 Ran 3 agents across 1 round(s) (max 3 concurrent per round). Total agent time: 0s.
