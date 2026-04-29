@@ -915,12 +915,12 @@ def test_wrapper_error_when_orchestrate_missing():
     captured = io.StringIO()
     with patch('os.path.exists', side_effect=mock_exists), \
          patch('sys.stderr', captured), \
-         patch('sys.exit') as mock_exit:
+         patch('sys.exit', side_effect=SystemExit) as mock_exit:
         try:
             run_wrapper_mode([], 2, Console(stderr=True))
         except SystemExit:
             pass
-    mock_exit.assert_called_with(1)
+    mock_exit.assert_called_once_with(1)
 
 
 # BDD: wrapper main loop calls sys.exit with orchestrate.py returncode when subprocess exits with 0

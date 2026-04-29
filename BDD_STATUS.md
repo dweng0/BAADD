@@ -175,7 +175,7 @@ Checked 347 scenario(s) across 32 test file(s).
 
 - [x] Find uncovered scenarios for orchestration
 - [x] AI-powered scenario ordering
-- [ ] UNCOVERED: Fallback to BDD.md order on AI failure
+- [x] Fallback to BDD.md order on AI failure
 - [ ] UNCOVERED: Select top N scenarios for parallel run
 - [ ] UNCOVERED: Create worktrees for parallel scenarios
 - [ ] UNCOVERED: Run agents in parallel with ThreadPoolExecutor
@@ -456,10 +456,9 @@ Checked 347 scenario(s) across 32 test file(s).
 - [ ] UNCOVERED: Integration test agent writes test result log
 
 ---
-**273/347 scenarios covered.**
+**274/347 scenarios covered.**
 
-74 scenario(s) need tests:
-- Fallback to BDD.md order on AI failure
+73 scenario(s) need tests:
 - Select top N scenarios for parallel run
 - Create worktrees for parallel scenarios
 - Run agents in parallel with ThreadPoolExecutor

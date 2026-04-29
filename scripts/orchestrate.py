@@ -197,19 +197,29 @@ def load_dotenv(path=".env"):
 load_dotenv()
 
 
-def run_cmd(cmd, cwd=None, timeout=30):
-    """Run a shell command, return (stdout, stderr, returncode)."""
-    try:
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            capture_output=True,
-            text=True,
-            cwd=cwd,
-            timeout=timeout,
+def run_cmd(cmd, cwd=None, timeout=30, capture=True):
+    """Run a shell command, return (stdout, stderr, returncode).
+
+    capture=True  — buffer output, return it (default)
+    capture=False — discard output (DEVNULL), return empty strings
+    capture=None  — inherit parent stdio (output visible in terminal, no buffering)
+    """
+    if capture is None:
+        proc = subprocess.Popen(cmd, shell=True, cwd=cwd)
+    else:
+        stdout_sink = subprocess.PIPE if capture else subprocess.DEVNULL
+        stderr_sink = subprocess.PIPE if capture else subprocess.DEVNULL
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=stdout_sink, stderr=stderr_sink, text=True, cwd=cwd
         )
-        return result.stdout.strip(), result.stderr.strip(), result.returncode
+    try:
+        out, err = proc.communicate(timeout=timeout)
+        if capture:
+            return out.strip(), err.strip(), proc.returncode
+        return "", "", proc.returncode
     except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.communicate()  # drain pipes so no zombie
         return "", "timeout", 1
 
 
@@ -895,7 +905,8 @@ def main():
         _, _, preflight_rc = run_cmd(
             'eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$TEST_CMD"',
             cwd=main_dir,
-            timeout=120,
+            timeout=600,
+            capture=None,  # stream to terminal — no Python buffering
         )
         if preflight_rc != 0:
             # Get the actual test command from BDD.md for the hint

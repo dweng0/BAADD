@@ -44,7 +44,8 @@
       "Bash(git clone *)",
       "Bash(mkdir -p locks)",
       "Bash(bash -c 'set -o noclobber; cat > locks/detect-stale-lock-from-dead-pid.lock')",
-      "Bash(echo \"Lock claimed: $?\")"
+      "Bash(echo \"Lock claimed: $?\")",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

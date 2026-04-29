@@ -108,3 +108,20 @@ def test_ai_powered_scenario_ordering():
     prompt_arg = mock_call.call_args[0][0]
     assert "Setup database schema" in prompt_arg
     assert "Create user account" in prompt_arg
+
+
+# BDD: Fallback to BDD.md order on AI failure
+def test_fallback_to_bdd_order_on_ai_failure():
+    """When the LLM planning call fails, scenarios use original BDD.md order."""
+    uncovered = [
+        ("feature", "Alpha scenario"),
+        ("feature", "Beta scenario"),
+        ("feature", "Gamma scenario"),
+    ]
+    bdd_content = "Feature: Test\n  Scenario: Alpha scenario\n  Scenario: Beta scenario\n  Scenario: Gamma scenario"
+
+    with patch("orchestrate.resolve_model_and_client", side_effect=Exception("connection refused")):
+        result = plan_scenario_order(uncovered, bdd_content, provider="anthropic")
+
+    expected = ["Alpha scenario", "Beta scenario", "Gamma scenario"]
+    assert result == expected, f"Expected BDD.md order on failure, got: {result}"
