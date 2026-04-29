@@ -1,187 +1,84 @@
 # Scenario Order
-<!-- generated: 2026-04-27 21:39 -->
+<!-- generated: 2026-04-29 20:24 -->
 
-- Setup Python dependencies
-- Setup Go dependencies
-- Setup Node dependencies
-- Setup Rust toolchain
-- Always install agent dependencies
-- Skip unknown language gracefully
-- Create locks directory
-- Read manifest file list
-- Stamp version in manifest
-- Set executable permissions on scripts
-- Download file creates parent directories
-- Create BDD.md from template
-- Override max parallel agents via CLI
-- Custom BDD.md path via --bdd flag
-- Override orchestrator planning model
-- Force orchestrator provider via CLI
-- Run orchestrator N rounds sequentially
-- Override max rounds via CLI
-- Write orchestrator journal entry
-- Select top N scenarios for parallel run
-- Create worktrees for parallel scenarios
-- Run agents in parallel with ThreadPoolExecutor
-- Stream agent output with scenario prefix
-- Merge results in planned order
-- Track total agent time across workers
-- Deferred scenarios message
-- Fallback to BDD.md order on AI failure
-- Worker result structure
-- Status indicators for worker output
-- Worker with no commits shows fail status
-- Worker with failing tests shows warning
-- Merge agent detects merge conflicts
-- Merge agent combines imports from multiple scenarios
-- Merge agent preserves all test functions
-- Merge agent inserts markers above test functions
-- Merge agent handles duplicate markers
-- Merge agent writes resolved file to staging
-- Merge agent logs resolution decisions
-- Integration test agent reports pass
-- Integration test agent reports fail
-- Integration test agent re-runs tests after fix
-- Integration test agent fails session on persistent failure
-- Integration test agent writes test result log
-- discover_worktrees returns baadd worktree paths from git worktree list output
-- discover_worktrees excludes the main worktree
-- discover_worktrees returns empty list when no baadd worktrees exist
-- discover_worktrees returns empty list when git command fails
-- slug_to_name converts hyphenated path slug to display name
-- slug_to_name handles path with no trailing digits
-- resolve_display_name prefers explicit wt_map entry over slug
-- resolve_display_name falls back to slug_to_name when path not in wt_map
-- read_wt_state reads current_iter as the highest iteration value seen in iteration_start events
-- read_wt_state reads max_iter from the max_iterations field of iteration_start events
-- read_wt_state sets active_phase to the label of the most recent phase lacking session_end
-- read_wt_state adds a phase label to done_phases when its log contains session_end
-- read_wt_state returns done_phases in fixed pipeline order PM-PLAN SE TESTER ACCEPT
-- read_wt_state reads tokens as the highest cumulative_output_tokens seen in api_response events
-- read_wt_state reads start_ts as a float epoch from the ts field of the session_start event
-- read_wt_state collects the 3 most recent tool_call events from the active phase log as last_tools
-- read_wt_state skips malformed JSON lines and continues reading
-- read_wt_state returns zeroed AgentState when no JSONL files exist in worktree
-- read_wt_state picks the JSONL file with the highest mtime when multiple files share the same phase prefix
-- read_wt_state handles OSError when opening a JSONL file
-- read_wt_state sets start_ts to current time when no session_start event exists
-- AgentState.is_stale property returns True when newest JSONL mtime is over 120 seconds old
-- AgentState.is_stale returns False when any JSONL file was modified within 120 seconds
-- AgentState.is_stale returns False when worktree has no JSONL files yet
-- AgentState.is_done returns True only when all four phase labels are in done_phases
-- AgentState.is_done returns False when fewer than four phases are done
-- log buffer is a deque(maxlen=10) that automatically discards oldest entries
-- format_tool_call formats read_file as "r: <path>"
-- format_tool_call formats write_file as "w: <path>"
-- format_tool_call formats bash as "$ <command>" truncated to 60 chars
-- format_tool_call formats run_command identically to bash
-- format_tool_call formats edit_file as "e: <path>"
-- format_tool_call uses generic "tool: value" format for unknown tools
-- format_tool_call returns "r: ?" when path key is missing from input_dict for read_file
-- format_tool_call handles None input_dict without raising
-- is_log_noise returns True for TPS monitor lines matching "tok | X TPS |"
-- is_log_noise returns True for bracketed per-agent output lines
-- is_log_noise returns False for round banner lines starting with "==="
-- is_log_noise returns False for MERGED result lines
-- is_log_noise returns False for THROWN AWAY result lines
-- is_log_noise returns False for Pre-flight status lines
-- is_log_noise returns False for scenario-to-worktree mapping lines containing " → /tmp"
-- is_log_noise returns False for empty lines
-- parse_wt_mapping_line extracts scenario name and worktree path
-- parse_wt_mapping_line returns None for lines without " → /tmp"
-- parse_wt_mapping_line returns None for empty string
-- format_phase_line returns correct string for two done phases and one active phase
-- format_phase_line returns all checkmarks when all four phases are done
-- format_phase_line returns four dashes when nothing has started
-- format_phase_line shows active phase with iteration count
-- render_progress_bar returns a string of bar_width unicode chars using "█" and "░"
-- render_progress_bar fills correct proportion at 50 percent
-- render_progress_bar returns fully filled bar at 100 percent
-- render_progress_bar clamps fill at 100 percent when current_iter exceeds max_iter
-- render_progress_bar handles max_iter=0 without division-by-zero
-- render_progress_bar always returns a string of exactly bar_width characters
-- format_metrics_line returns formatted tokens and TPS string
-- format_metrics_line returns dash when tokens is zero
-- format_metrics_line computes TPS as tokens divided by elapsed_s
-- format_metrics_line does not divide by zero when elapsed_s is 0
-- TPS calculation guards against division by zero when elapsed_s is 0
-- format_elapsed returns seconds string for durations under 60 seconds
-- format_elapsed returns minutes and zero-padded seconds for durations over 60 seconds
-- format_elapsed returns "0s" for zero elapsed time
-- format_header returns a string containing agent count and session elapsed time
-- format_header returns "waiting for agents" string when states list is empty
-- format_log_strip returns a string containing all lines from the log buffer
-- format_log_strip returns a placeholder string when log buffer is empty
-- build_agent_panel returns a rich.panel.Panel whose title is the scenario name
-- build_agent_panel appends "(stale)" to panel title when state.is_stale is True
-- build_agent_panel does not include "(stale)" when state.is_stale is False
-- build_renderable returns a rich.console.Group containing all agent panels plus header and log panels
-- build_renderable returns a Group with only header and log panels when states is empty
-- Dashboard file exists at scripts/dashboard.py
-- Running "python3 scripts/dashboard.py" opens the Rich TUI immediately
-- The dashboard is only for scripts/orchestrate.py — not evolve.sh or agent.py
-- Live refresh loop uses rich.live.Live with refresh_per_second
-- Each agent is rendered as a rich.panel.Panel
-- Overall renderable is a rich.console.Group of Panels stacked vertically
-- Dashboard handles zero-width terminal gracefully
-- wrapper mode constructs the subprocess command as ["python3", "scripts/orchestrate.py"] plus forwarded args
-- wrapper mode passes all unrecognised args through to orchestrate.py unchanged
-- wrapper mode raises RuntimeError and prints clear message when scripts/orchestrate.py does not exist
-- Missing rich package causes immediate error with install instruction
-- --watch flag causes no subprocess to be started
-- watcher mode calls discover_worktrees on every poll iteration
-- watcher exits after two consecutive empty polls from discover_worktrees
-- watcher does not exit after a single empty poll
-- watcher prints "All agents done." to stdout after the Live context closes
-- watcher resolves scenario names from slug_to_name when no wt_map is available
-- stdout reader thread calls is_log_noise on each line and only appends non-noise lines to log_buffer
-- stdout reader thread calls parse_wt_mapping_line and populates wt_map for matching lines
-- stdout reader thread sets a threading.Event when subprocess stdout is exhausted
-- wrapper main loop calls sys.exit with orchestrate.py returncode when subprocess exits with 0
-- wrapper main loop calls sys.exit with orchestrate.py returncode when subprocess exits with 1
-- wrapper renders "waiting for agents" header when no worktrees exist yet
-- wrapper adds a new agent panel when a worktree appears between polls
-- KeyboardInterrupt during Live loop exits cleanly without traceback
-- SIGTERM during wrapper mode terminates the subprocess before exiting
-- Worktree directory disappears between polls without crashing
-- glob finds no JSONL files in a worktree that exists but has not started yet
-- GitHub Actions workflow triggers on schedule
-- Manual workflow dispatch
-- Bootstrap detection in workflow
-- Workflow timeout limit
-- Retry after first attempt failure
-- Retry after second attempt failure
-- Configure git bot identity
-- GitHub Actions log grouping
-- Detect CI environment
-- Release workflow on version tag
-- Release includes install.sh
-- Docs workflow triggers on docs path change
-- Docs deployment to GitHub Pages
-- Update existing baadd project
-- Auto-detect update mode
-- Pin to specific version
-- Fetch latest version from GitHub API
-- Skip no-clobber files on update
-- Archive journals before update
-- Never modify IDENTITY.md
-- Never modify scripts/evolve.sh
-- Never modify .github/workflows/
-- Only build features from BDD.md
-- Already on target version skips update
-- API error causes retry exit
-- Post-merge verification catches breakage
-- Timeout kills long session
-- Worktree creation failure
-- Handle concurrent scenario locks
-- Handle scenario with special characters in name
-- Moonshot default model
-- Dashscope default model
-- Groq default model
-- Ollama default model
-- Custom provider requires api_key string placeholder
-- Ollama provider uses "ollama" as api_key
-- Mode flag affects wrap-up message content
-- Apply mode modifies files
-- Tool output formatting with iteration tag
-- Tool icons for different tool types
+- sessions.jsonl is created if it does not exist
+- read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
+- read_sessions returns empty list when sessions.jsonl does not exist
+- read_sessions skips malformed JSON lines without crashing
+- sessions.jsonl append is atomic enough to avoid corruption under parallel writes
+- active_wt_paths(sessions_path) returns only wt_paths with session_start and no session_end
+- active_wt_paths excludes sessions older than SESSION_TIMEOUT seconds
+- active_wt_paths handles duplicate session_start lines for the same wt_path
+- evolve.sh appends session_start to sessions.jsonl when worktree is created
+- evolve.sh appends session_end to sessions.jsonl on normal completion
+- evolve.sh appends session_end to sessions.jsonl on failure or early exit
+- orchestrate.py appends session_start per worker worktree it spawns
+- orchestrate.py appends session_end for each worker when it finishes
+- git worktree prune is skipped when main_dir is not a git repository
+- discover_worktrees runs git worktree prune before listing
+- discover_worktrees falls back to git list only when sessions.jsonl is absent
+- discover_worktrees excludes worktrees absent from sessions.jsonl active set
+- discover_worktrees includes worktrees present in both git list and active set
+- discover_worktrees excludes worktrees whose /tmp directory no longer exists on disk
+- discover_worktrees treats stale sessions (no session_end, age > SESSION_TIMEOUT) as inactive
+- discover_worktrees excludes worktrees with session_end written within the last 2 seconds
+- discover_worktrees returns empty list when git worktree prune itself raises OSError
+- discover_worktrees returns consistent results under concurrent calls
+- build_layout() returns a rich.layout.Layout with header, body, log, statusbar sections
+- agent grid uses 1 column when terminal width is less than 160
+- agent grid uses 2 columns when terminal width is 160 to 239
+- agent grid uses 3 columns when terminal width is 240 or more
+- build_renderable updates Layout sections instead of returning a Group
+- Layout degrades to single-column Group when rich.layout.Layout raises NotImplementedError
+- Column count recalculates on every poll when terminal is resized
+- AgentState has a token_history field that is a deque with maxlen=60
+- read_wt_state populates token_history from api_response events
+- render_sparkline maps values to 8 block characters by percentile bucket
+- render_sparkline returns a string of exactly `width` characters
+- render_sparkline handles a single-element history without IndexError
+- render_sparkline returns width spaces when history is empty
+- render_sparkline returns all "▁" when all values are equal (flat line)
+- render_sparkline right-aligns when history has fewer points than width
+- render_sparkline truncates to rightmost `width` points when history is longer than width
+- build_agent_panel includes the sparkline string inside the panel body
+- sparkline line in agent panel is labelled "tok/iter" to explain the graph
+- render_gradient_bar returns green-marked filled chars at 0 percent used
+- render_gradient_bar returns green markup at 30 percent used
+- render_gradient_bar switches to yellow markup at 50 percent used
+- render_gradient_bar switches to red markup at 75 percent used
+- render_gradient_bar switches to bold red markup at 90 percent used
+- render_gradient_bar returns fully filled bold-red bar at 100 percent
+- render_gradient_bar result is exactly width visible characters when markup is stripped
+- render_gradient_bar does not raise ZeroDivisionError when max_val is 0
+- render_gradient_bar clamps filled chars to width when current exceeds max_val
+- build_agent_panel uses render_gradient_bar instead of plain render_progress_bar
+- build_status_bar returns a rich.text.Text object
+- build_status_bar shows correct agent count
+- build_status_bar shows summed token count across all agents
+- build_status_bar shows session uptime in Xm Xs format
+- build_status_bar contains all four keybinding hints
+- build_status_bar text is padded to exactly terminal_width characters
+- build_status_bar uses reverse-video style for background
+- build_status_bar shows "agents: 0" when states is empty
+- build_status_bar does not raise when terminal_width is 0 or 1
+- keyboard_input_thread is a daemon thread started in main()
+- key_queue is bounded (maxsize=32) to prevent unbounded growth if keys are ignored
+- pressing q puts "q" into the key_queue
+- pressing r puts "r" into the key_queue and triggers immediate refresh
+- pressing up-arrow puts "up" into the key_queue
+- pressing down-arrow puts "down" into the key_queue
+- multiple queued keystrokes are all drained in a single poll cycle
+- keyboard_input_thread restores terminal settings on exit
+- keyboard_input_thread does not crash when stdin is not a tty (e.g. CI pipe)
+- format_log_strip with scroll_offset=0 returns the last `height` lines of log_buffer
+- format_log_strip with scroll_offset=5 returns lines shifted 5 back from the end
+- format_log_strip clamps scroll_offset so it never scrolls before the first line
+- format_log_strip pads with empty lines when log_buffer has fewer than height lines
+- format_log_strip returns placeholder when log_buffer is empty regardless of scroll_offset
+- up-arrow increments log_scroll_offset by 1
+- down-arrow decrements log_scroll_offset by 1 but not below 0
+- down-arrow at offset 0 does not go negative
+- scroll up beyond buffer start is clamped and does not raise IndexError
+- log Panel title shows scroll position indicator when scroll_offset > 0
+- new log lines do not auto-scroll when scroll_offset > 0
+- new log lines DO auto-scroll when scroll_offset is 0

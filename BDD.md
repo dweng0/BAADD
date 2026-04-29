@@ -1990,3 +1990,544 @@ System: BAADD (Behaviour and AI Driven Development) — a framework where an AI 
             Given integration test completes
             When result is logged
             Then test_results.jsonl contains scenario, pass_count, fail_count, duration_ms
+
+    Feature: Worktree Session Lifecycle
+        As a developer running evolve.sh or orchestrate.py
+        I want sessions to register start and end events in a central log
+        So that the dashboard can distinguish live agents from orphaned or completed worktrees
+
+        evolve.sh and orchestrate.py append JSON lines to sessions.jsonl in the main repo root.
+        Each line is {"type": "session_start"|"session_end", "scenario": "...", "pid": 12345,
+        "wt_path": "/tmp/baadd-wt-...", "ts": 1700000000.0}.
+        The dashboard reads sessions.jsonl to determine which worktrees are truly active.
+        A worktree is ACTIVE if it has a session_start with no matching session_end
+        (matched by wt_path) AND the session_start is less than SESSION_TIMEOUT seconds old (default 3600).
+        A worktree is STALE if session_start is present but no session_end AND age > SESSION_TIMEOUT.
+        A worktree is DONE if session_end is present.
+
+        Scenario: evolve.sh appends session_start to sessions.jsonl when worktree is created
+            Given evolve.sh has locked a scenario and created /tmp/baadd-wt-my-scenario-1234
+            When the worktree is ready and the agent session is about to start
+            Then sessions.jsonl in the main repo root contains a line with type "session_start",
+                 wt_path "/tmp/baadd-wt-my-scenario-1234", and a numeric "ts" timestamp
+
+        Scenario: evolve.sh appends session_end to sessions.jsonl on normal completion
+            Given an evolve.sh session completed successfully and merged back to main
+            When the cleanup section of evolve.sh runs
+            Then sessions.jsonl contains a "session_end" line with the same wt_path as the session_start
+
+        Scenario: evolve.sh appends session_end to sessions.jsonl on failure or early exit
+            Given evolve.sh exits early (build fail, test fail, lock race, or unhandled error)
+            When the EXIT trap fires (cleanup_worktree)
+            Then sessions.jsonl contains a "session_end" line for the wt_path even on non-zero exit
+
+        Scenario: orchestrate.py appends session_start per worker worktree it spawns
+            Given orchestrate.py spawns 3 parallel evolve.sh workers, each with its own wt_path
+            When each worker worktree is created
+            Then sessions.jsonl contains 3 separate session_start lines with distinct wt_paths
+
+        Scenario: orchestrate.py appends session_end for each worker when it finishes
+            Given orchestrate.py has spawned 3 workers and they all complete
+            When the last worker exits
+            Then sessions.jsonl contains 3 session_end lines matching the 3 wt_paths
+
+        Scenario: sessions.jsonl is created if it does not exist
+            Given sessions.jsonl does not exist in the repo root
+            When evolve.sh or orchestrate.py appends the first session_start
+            Then sessions.jsonl is created with that one line — no error raised
+
+        Scenario: sessions.jsonl append is atomic enough to avoid corruption under parallel writes
+            Given 4 evolve.sh processes run simultaneously and all write session_start at the same moment
+            When sessions.jsonl is read after all writes complete
+            Then it contains exactly 4 valid JSON lines — no truncated or merged lines
+            (Use a file lock via flock or Python's fcntl before each append)
+
+        Scenario: read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
+            Given sessions.jsonl contains 5 valid JSON lines and 1 blank line
+            When read_sessions(sessions_path) is called
+            Then it returns a list of 5 dicts — blank lines are skipped, no exception raised
+
+        Scenario: read_sessions returns empty list when sessions.jsonl does not exist
+            Given sessions.jsonl is absent
+            When read_sessions(sessions_path) is called
+            Then it returns [] without raising FileNotFoundError
+
+        Scenario: read_sessions skips malformed JSON lines without crashing
+            Given sessions.jsonl contains 3 valid lines and 1 line that is not valid JSON
+            When read_sessions(sessions_path) is called
+            Then it returns 3 dicts — the bad line is silently skipped
+
+        Scenario: active_wt_paths(sessions_path) returns only wt_paths with session_start and no session_end
+            Given sessions.jsonl has: start(A), start(B), end(B)
+            When active_wt_paths(sessions_path) is called
+            Then it returns {"/tmp/baadd-wt-A-..."} only — B is excluded because it has session_end
+
+        Scenario: active_wt_paths excludes sessions older than SESSION_TIMEOUT seconds
+            Given a session_start with no session_end was written 4000 seconds ago (default timeout 3600)
+            When active_wt_paths(sessions_path) is called
+            Then that wt_path is NOT returned — it is treated as stale/orphaned
+
+        Scenario: active_wt_paths handles duplicate session_start lines for the same wt_path
+            Given sessions.jsonl has two session_start lines for the same wt_path (crash + restart)
+            When active_wt_paths is called
+            Then wt_path appears at most once in the result — the latest session_start is used
+
+    Feature: Dashboard Worktree Staleness Filtering
+        As a developer using the dashboard
+        I want the dashboard to show only genuinely active worktrees
+        So that completed or orphaned agents do not clutter the display
+
+        discover_worktrees(main_dir) is updated to:
+        1. Run "git worktree prune" before "git worktree list" to remove stale git refs
+           where the /tmp directory no longer exists.
+        2. Cross-reference results with active_wt_paths(sessions_path) from sessions.jsonl.
+        3. Return only worktrees that appear in BOTH git worktree list AND active_wt_paths.
+
+        Scenario: discover_worktrees runs git worktree prune before listing
+            Given some /tmp/baadd-wt-* directories were deleted without running git worktree remove
+            When discover_worktrees(main_dir) is called
+            Then it first runs ["git", "-C", main_dir, "worktree", "prune"] before listing
+            And stale worktree refs are removed from .git/worktrees/ before the list is read
+
+        Scenario: discover_worktrees excludes worktrees absent from sessions.jsonl active set
+            Given git worktree list shows /tmp/baadd-wt-old-scenario-99
+            And sessions.jsonl has session_end for that wt_path
+            When discover_worktrees(main_dir) is called
+            Then /tmp/baadd-wt-old-scenario-99 is NOT in the result
+
+        Scenario: discover_worktrees includes worktrees present in both git list and active set
+            Given git worktree list shows /tmp/baadd-wt-new-scenario-42
+            And sessions.jsonl has session_start with no session_end for that wt_path
+            When discover_worktrees(main_dir) is called
+            Then /tmp/baadd-wt-new-scenario-42 IS in the result
+
+        Scenario: discover_worktrees falls back to git list only when sessions.jsonl is absent
+            Given sessions.jsonl does not exist (fresh install, pre-lifecycle-feature runs)
+            When discover_worktrees(main_dir) is called
+            Then it returns all /tmp/baadd-wt-* paths from git worktree list with no filtering
+            And does not raise an exception
+
+        Scenario: discover_worktrees excludes worktrees whose /tmp directory no longer exists on disk
+            Given git worktree list still shows /tmp/baadd-wt-vanished-55 after prune fails to remove it
+            When discover_worktrees(main_dir) is called
+            Then it checks os.path.isdir(wt_path) and excludes paths where the directory is gone
+
+        Scenario: discover_worktrees treats stale sessions (no session_end, age > SESSION_TIMEOUT) as inactive
+            Given sessions.jsonl has session_start for /tmp/baadd-wt-hung-77 written 2 hours ago
+            And no session_end for that wt_path
+            And the /tmp/baadd-wt-hung-77 directory still exists
+            When discover_worktrees(main_dir) is called
+            Then /tmp/baadd-wt-hung-77 is NOT returned — it is considered orphaned
+
+        Scenario: discover_worktrees returns empty list when git worktree prune itself raises OSError
+            Given git is not installed or the subprocess call raises OSError during prune
+            When discover_worktrees(main_dir) is called
+            Then it returns [] without crashing — the prune failure is silently swallowed
+
+        Scenario: discover_worktrees returns consistent results under concurrent calls
+            Given two dashboard poll cycles call discover_worktrees simultaneously
+            When both calls read sessions.jsonl at the same time (one is mid-write)
+            Then each call returns a valid list — no exception from partial JSON read
+
+        Scenario: discover_worktrees excludes worktrees with session_end written within the last 2 seconds
+            Given session_end was written 1 second ago for /tmp/baadd-wt-just-done-88
+            When discover_worktrees(main_dir) is called
+            Then /tmp/baadd-wt-just-done-88 is NOT returned — session_end presence is sufficient to exclude
+
+        Scenario: git worktree prune is skipped when main_dir is not a git repository
+            Given main_dir is a path that is not inside a git repository
+            When discover_worktrees(main_dir) is called
+            Then it skips the prune step, returns [], and does not raise CalledProcessError
+
+    Feature: Dashboard BTOP-Style Responsive Layout
+        As a developer monitoring agents
+        I want the dashboard to arrange panels in a multi-column grid that adapts to terminal width
+        So that wide terminals show more agents at a glance like BTOP does
+
+        The layout uses rich.layout.Layout for the outer frame:
+          - "header" row: fixed height 3, spans full width
+          - "body" row: flexible height, contains the agent grid
+          - "log" row: fixed height 10
+          - "statusbar" row: fixed height 1
+        The agent grid inside "body" uses rich.columns.Columns with equal=True and expand=True.
+        Column count: terminal_width >= 240 → 3 cols; >= 160 → 2 cols; < 160 → 1 col.
+        The Layout object is passed directly to rich.live.Live instead of a Group.
+
+        Scenario: build_layout() returns a rich.layout.Layout with header, body, log, statusbar sections
+            Given build_layout() is called
+            When the returned object is inspected
+            Then it is an instance of rich.layout.Layout
+            And it contains named sections: "header", "body", "log", "statusbar"
+
+        Scenario: agent grid uses 1 column when terminal width is less than 160
+            Given Console().width returns 120
+            When build_agent_grid(states, terminal_width=120) is called
+            Then it returns a rich.columns.Columns with 1 column worth of panels (one panel per row)
+
+        Scenario: agent grid uses 2 columns when terminal width is 160 to 239
+            Given Console().width returns 180
+            When build_agent_grid(states, terminal_width=180) is called with 4 AgentState objects
+            Then it returns a rich.columns.Columns with equal=True containing 4 panels arranged 2-per-row
+
+        Scenario: agent grid uses 3 columns when terminal width is 240 or more
+            Given Console().width returns 260
+            When build_agent_grid(states, terminal_width=260) is called with 6 AgentState objects
+            Then it returns a rich.columns.Columns with equal=True containing 6 panels arranged 3-per-row
+
+        Scenario: build_renderable updates Layout sections instead of returning a Group
+            Given build_renderable(states, log_buffer, session_start_ts, layout, terminal_width) is called
+            When the layout sections are inspected after the call
+            Then layout["header"].update(...) was called with a Panel
+            And layout["body"].update(...) was called with the agent grid
+            And layout["log"].update(...) was called with a Panel
+            And layout["statusbar"].update(...) was called with a Text
+
+        Scenario: Layout degrades to single-column Group when rich.layout.Layout raises NotImplementedError
+            Given rich.layout.Layout instantiation raises NotImplementedError (older Rich version)
+            When build_renderable is called
+            Then it falls back to building a rich.console.Group as before — no crash
+
+        Scenario: Column count recalculates on every poll when terminal is resized
+            Given terminal width was 200 (2 cols) on poll N
+            And terminal width changes to 120 (1 col) on poll N+1
+            When build_renderable is called on poll N+1
+            Then the agent grid switches to 1 column — no restart required
+
+        Scenario: Empty agent list renders body section as a centered "waiting for agents" Panel
+            Given states = []
+            When build_agent_grid([], terminal_width=180) is called
+            Then it returns a Panel containing "waiting for agents" text — not an empty Columns
+
+        Scenario: Single agent fills full width regardless of column threshold
+            Given states has exactly 1 AgentState and terminal_width=260
+            When build_agent_grid(states, terminal_width=260) is called
+            Then the single panel expands to full width — not a narrow 1/3 column
+
+    Feature: Dashboard Token Sparklines
+        As a developer monitoring agent progress
+        I want a sparkline graph of token usage per iteration inside each agent panel
+        So that I can see acceleration or stalling at a glance like BTOP's graphs
+
+        Sparklines use the 8-level block characters: ▁▂▃▄▅▆▇█
+        AgentState gains a token_history field: collections.deque(maxlen=60) of int (tokens per iteration).
+        read_wt_state populates token_history from api_response events (output_tokens per iteration).
+        render_sparkline(history, width) returns a plain string of exactly `width` block characters.
+        The mapping: value maps to one of 8 chars based on its position in [min(history), max(history)].
+        When history has fewer points than width, the sparkline is right-aligned (left-padded with spaces).
+
+        Scenario: AgentState has a token_history field that is a deque with maxlen=60
+            Given a freshly constructed AgentState
+            When token_history is inspected
+            Then it is a collections.deque with maxlen=60 and initial length 0
+
+        Scenario: read_wt_state populates token_history from api_response events
+            Given a JSONL file with api_response events having output_tokens 100, 200, 150
+            When read_wt_state(wt_path) is called
+            Then state.token_history == deque([100, 200, 150])
+
+        Scenario: render_sparkline maps values to 8 block characters by percentile bucket
+            Given history = deque([0, 10, 20, 30, 40, 50, 60, 70])
+            When render_sparkline(history, width=8) is called
+            Then it returns "▁▂▃▄▅▆▇█" — each value maps to the corresponding level
+
+        Scenario: render_sparkline returns a string of exactly `width` characters
+            Given history = deque([50, 100, 75]) and width = 20
+            When render_sparkline(history, width=20) is called
+            Then len(result) == 20 exactly
+
+        Scenario: render_sparkline right-aligns when history has fewer points than width
+            Given history = deque([80, 90]) and width = 10
+            When render_sparkline(history, width=10) is called
+            Then result starts with 8 spaces and ends with 2 block chars (e.g. "        ▆█")
+
+        Scenario: render_sparkline returns all "▁" when all values are equal (flat line)
+            Given history = deque([500, 500, 500, 500])
+            When render_sparkline(history, width=4) is called
+            Then result == "▁▁▁▁" — all values map to the lowest level when range is zero
+
+        Scenario: render_sparkline returns width spaces when history is empty
+            Given history = deque([]) and width = 10
+            When render_sparkline(history, width=10) is called
+            Then result == "          " (10 spaces) — no exception
+
+        Scenario: render_sparkline truncates to rightmost `width` points when history is longer than width
+            Given history = deque([1,2,3,4,5,6,7,8,9,10]) and width = 5
+            When render_sparkline(history, width=5) is called
+            Then it uses only the last 5 values [6,7,8,9,10] — oldest points are dropped
+
+        Scenario: build_agent_panel includes the sparkline string inside the panel body
+            Given state.token_history = deque([100, 200, 300]) and panel width is 40
+            When build_agent_panel(state, panel_width=40) is called
+            Then the panel body contains a line of block characters from render_sparkline
+
+        Scenario: sparkline line in agent panel is labelled "tok/iter" to explain the graph
+            Given a valid AgentState with non-empty token_history
+            When build_agent_panel(state) is called
+            Then the panel body contains "tok/iter" adjacent to or above the sparkline characters
+
+        Scenario: render_sparkline handles a single-element history without IndexError
+            Given history = deque([42]) and width = 5
+            When render_sparkline(history, width=5) is called
+            Then it returns "    ▁" (4 spaces + lowest block char) — no crash
+
+    Feature: Dashboard Gradient Progress Bars
+        As a developer monitoring agent iteration progress
+        I want progress bars that change color from green to red as iterations are consumed
+        So that I can spot agents approaching their limit at a glance like BTOP's CPU bars
+
+        render_gradient_bar(current, max_val, width) returns a Rich markup string (not plain text).
+        Color thresholds (by percentage of max_val used):
+          0–49%  → [green]█[/green]  for filled chars
+          50–74% → [yellow]█[/yellow]
+          75–89% → [red]█[/red]
+          90–100%→ [bold red]█[/bold red]
+        Empty chars remain plain "░" (no color markup).
+        The function returns a string suitable for use inside rich.text.Text.from_markup().
+
+        Scenario: render_gradient_bar returns green-marked filled chars at 0 percent used
+            Given current=0, max_val=100, width=10
+            When render_gradient_bar(0, 100, 10) is called
+            Then result == "░░░░░░░░░░" (all empty, no markup needed)
+
+        Scenario: render_gradient_bar returns green markup at 30 percent used
+            Given current=30, max_val=100, width=10
+            When render_gradient_bar(30, 100, 10) is called
+            Then the filled portion uses "[green]█[/green]" markup (3 filled green + 7 empty)
+
+        Scenario: render_gradient_bar switches to yellow markup at 50 percent used
+            Given current=50, max_val=100, width=10
+            When render_gradient_bar(50, 100, 10) is called
+            Then the filled portion uses "[yellow]█[/yellow]" markup (5 filled yellow + 5 empty)
+
+        Scenario: render_gradient_bar switches to red markup at 75 percent used
+            Given current=75, max_val=100, width=10
+            When render_gradient_bar(75, 100, 10) is called
+            Then the filled portion uses "[red]█[/red]" markup (7-8 filled red + 2-3 empty)
+
+        Scenario: render_gradient_bar switches to bold red markup at 90 percent used
+            Given current=90, max_val=100, width=10
+            When render_gradient_bar(90, 100, 10) is called
+            Then the filled portion uses "[bold red]█[/bold red]" markup (9 filled bold-red + 1 empty)
+
+        Scenario: render_gradient_bar returns fully filled bold-red bar at 100 percent
+            Given current=100, max_val=100, width=10
+            When render_gradient_bar(100, 100, 10) is called
+            Then result is 10 "[bold red]█[/bold red]" chars — no empty chars
+
+        Scenario: render_gradient_bar result is exactly width visible characters when markup is stripped
+            Given current=60, max_val=100, width=20
+            When render_gradient_bar(60, 100, 20) is called
+            Then rich.markup.strip_markup(result) has length 20 — markup tags do not count toward width
+
+        Scenario: render_gradient_bar does not raise ZeroDivisionError when max_val is 0
+            Given current=0, max_val=0, width=10
+            When render_gradient_bar(0, 0, 10) is called
+            Then it returns "░░░░░░░░░░" without raising ZeroDivisionError
+
+        Scenario: render_gradient_bar clamps filled chars to width when current exceeds max_val
+            Given current=150, max_val=100, width=10
+            When render_gradient_bar(150, 100, 10) is called
+            Then visible chars == 10 filled "[bold red]█[/bold red]" — no overflow or exception
+
+        Scenario: build_agent_panel uses render_gradient_bar instead of plain render_progress_bar
+            Given a valid AgentState with current_iter=80 and max_iter=100
+            When build_agent_panel(state) is called
+            Then the panel body contains "[red]" or "[bold red]" markup — confirming gradient bar is used
+
+    Feature: Dashboard Status Bar
+        As a developer monitoring agents
+        I want a one-line status bar at the bottom of the dashboard
+        So that key stats and keybindings are always visible like BTOP's footer
+
+        build_status_bar(states, session_start_ts, terminal_width) returns a rich.text.Text object.
+        Content (left-aligned, space-padded to terminal_width):
+          "  q:quit  r:refresh  ↑↓:scroll log  │  agents: N  │  tok: X,XXX  │  up: Xm Xs  "
+        Where N = len(states), X,XXX = sum of state.tokens for all states,
+        and "up: Xm Xs" = formatted time since session_start_ts.
+        The status bar background is styled with "reverse" (Rich's reverse-video style).
+
+        Scenario: build_status_bar returns a rich.text.Text object
+            Given any valid inputs
+            When build_status_bar(states, session_start_ts, terminal_width=80) is called
+            Then isinstance(result, rich.text.Text) is True
+
+        Scenario: build_status_bar shows correct agent count
+            Given 3 AgentState objects
+            When build_status_bar(states, session_start_ts, terminal_width=120) is called
+            Then the text contains "agents: 3"
+
+        Scenario: build_status_bar shows summed token count across all agents
+            Given states with token counts 1000, 2500, 750 (sum=4250)
+            When build_status_bar(states, session_start_ts, terminal_width=120) is called
+            Then the text contains "tok: 4,250"
+
+        Scenario: build_status_bar shows session uptime in Xm Xs format
+            Given session_start_ts = time.time() - 125 (2 minutes 5 seconds ago)
+            When build_status_bar(states, session_start_ts, terminal_width=120) is called
+            Then the text contains "up: 2m05s"
+
+        Scenario: build_status_bar contains all four keybinding hints
+            Given any valid inputs
+            When build_status_bar(states, session_start_ts, terminal_width=120) is called
+            Then the text contains "q:quit", "r:refresh", "↑↓:scroll log"
+
+        Scenario: build_status_bar text is padded to exactly terminal_width characters
+            Given terminal_width=100
+            When build_status_bar([], session_start_ts, terminal_width=100) is called
+            Then len(result.plain) == 100 (padded with spaces on the right)
+
+        Scenario: build_status_bar uses reverse-video style for background
+            Given any valid inputs
+            When build_status_bar(states, session_start_ts, terminal_width=80) is called
+            Then result._spans contain a style with "reverse" applied to the full text
+
+        Scenario: build_status_bar shows "agents: 0" when states is empty
+            Given states = []
+            When build_status_bar([], session_start_ts, terminal_width=80) is called
+            Then text contains "agents: 0" and "tok: 0"
+
+        Scenario: build_status_bar does not raise when terminal_width is 0 or 1
+            Given terminal_width=0 or terminal_width=1
+            When build_status_bar([], session_start_ts, terminal_width) is called
+            Then it returns a Text object without raising — content may be truncated
+
+    Feature: Dashboard Keyboard Input
+        As a developer using the dashboard
+        I want to control the dashboard with keyboard shortcuts without freezing the display
+        So that I can quit, force-refresh, or scroll without waiting for the next poll cycle
+
+        Keyboard input is handled by a background daemon thread started in main().
+        The thread uses sys.stdin, termios, and tty (all Python stdlib — not TUI libraries).
+        It sets the terminal to raw mode (tty.setraw), reads one byte at a time, and puts
+        keystrokes into a queue.Queue. The main Live loop drains the queue each cycle.
+        On exit (KeyboardInterrupt or q), the thread restores the original terminal settings
+        via termios.tcsetattr before the process terminates.
+
+        Scenario: keyboard_input_thread is a daemon thread started in main()
+            Given scripts/dashboard.py is read
+            When the main() function body is inspected
+            Then it starts a threading.Thread(target=keyboard_input_thread, daemon=True)
+            before entering the rich.live.Live context
+
+        Scenario: pressing q puts "q" into the key_queue
+            Given keyboard_input_thread is running and the terminal is in raw mode
+            When the user presses the "q" key (byte 0x71)
+            Then "q" is placed into the shared queue.Queue
+
+        Scenario: main loop reads q from key_queue and exits the Live loop
+            Given key_queue.get_nowait() returns "q"
+            When the main Live loop drains the queue
+            Then it breaks out of the polling loop and exits cleanly (exit code 0)
+
+        Scenario: pressing r puts "r" into the key_queue and triggers immediate refresh
+            Given key_queue.get_nowait() returns "r"
+            When the main Live loop drains the queue
+            Then it calls live.update(build_renderable(...)) immediately without waiting for the next poll interval
+
+        Scenario: pressing up-arrow puts "up" into the key_queue
+            Given the terminal sends the ANSI escape sequence ESC [ A for up-arrow
+            When keyboard_input_thread reads those 3 bytes
+            Then it puts the string "up" into the key_queue as a single logical keystroke
+
+        Scenario: pressing down-arrow puts "down" into the key_queue
+            Given the terminal sends ESC [ B for down-arrow
+            When keyboard_input_thread reads those 3 bytes
+            Then it puts "down" into the key_queue
+
+        Scenario: up-arrow increments log_scroll_offset by 1
+            Given log_scroll_offset = 3 and key_queue yields "up"
+            When the main loop drains the queue
+            Then log_scroll_offset becomes 4
+
+        Scenario: down-arrow decrements log_scroll_offset by 1 but not below 0
+            Given log_scroll_offset = 1 and key_queue yields "down"
+            When the main loop drains the queue
+            Then log_scroll_offset becomes 0
+
+        Scenario: down-arrow at offset 0 does not go negative
+            Given log_scroll_offset = 0 and key_queue yields "down"
+            When the main loop drains the queue
+            Then log_scroll_offset remains 0 — no underflow
+
+        Scenario: keyboard_input_thread restores terminal settings on exit
+            Given keyboard_input_thread has set the terminal to raw mode
+            When the thread exits (because main() sets a stop event)
+            Then termios.tcsetattr is called with the original settings before the thread returns
+
+        Scenario: keyboard_input_thread does not crash when stdin is not a tty (e.g. CI pipe)
+            Given sys.stdin.fileno() raises io.UnsupportedOperation (stdin is a pipe)
+            When keyboard_input_thread starts
+            Then it exits silently without setting raw mode or raising — keyboard input is simply disabled
+
+        Scenario: key_queue is bounded (maxsize=32) to prevent unbounded growth if keys are ignored
+            Given scripts/dashboard.py is read
+            When the key_queue instantiation is inspected
+            Then queue.Queue(maxsize=32) is used — not an unbounded Queue()
+
+        Scenario: multiple queued keystrokes are all drained in a single poll cycle
+            Given key_queue contains ["up", "up", "r"] before the poll fires
+            When the main loop drains the queue
+            Then all three are processed — offset increases by 2 and a refresh is triggered
+
+    Feature: Dashboard Log Panel Scrolling
+        As a developer monitoring agents
+        I want to scroll the log panel up to see older output without losing the live display
+        So that I can review recent decisions without quitting like BTOP's process list
+
+        The log panel shows the last LOG_HEIGHT lines of log_buffer by default (auto-scroll).
+        LOG_HEIGHT defaults to 8. log_scroll_offset=0 means show the most recent lines.
+        log_scroll_offset=N means show lines ending N lines before the most recent.
+        Auto-scroll is suspended when log_scroll_offset > 0.
+        Auto-scroll resumes when log_scroll_offset reaches 0 again.
+        format_log_strip(log_buffer, height, scroll_offset) returns a string of exactly `height` lines.
+
+        Scenario: format_log_strip with scroll_offset=0 returns the last `height` lines of log_buffer
+            Given log_buffer has 20 lines numbered 1–20 and height=8, scroll_offset=0
+            When format_log_strip(log_buffer, height=8, scroll_offset=0) is called
+            Then the returned string contains lines 13–20 (the 8 most recent)
+
+        Scenario: format_log_strip with scroll_offset=5 returns lines shifted 5 back from the end
+            Given log_buffer has 20 lines numbered 1–20 and height=8, scroll_offset=5
+            When format_log_strip(log_buffer, height=8, scroll_offset=5) is called
+            Then the returned string contains lines 8–15 (shifted 5 earlier)
+
+        Scenario: format_log_strip clamps scroll_offset so it never scrolls before the first line
+            Given log_buffer has 10 lines and height=8, scroll_offset=100
+            When format_log_strip(log_buffer, height=8, scroll_offset=100) is called
+            Then the returned string contains lines 1–8 (clamped at buffer start) — no IndexError
+
+        Scenario: format_log_strip pads with empty lines when log_buffer has fewer than height lines
+            Given log_buffer has 3 lines and height=8, scroll_offset=0
+            When format_log_strip(log_buffer, height=8, scroll_offset=0) is called
+            Then the returned string contains 3 content lines and 5 empty lines — total height=8
+
+        Scenario: log Panel title shows scroll position indicator when scroll_offset > 0
+            Given log_scroll_offset = 4
+            When the log Panel is built with that offset
+            Then the panel title contains "↑4" or "↑ 4 more" — indicating lines above the current view
+
+        Scenario: log Panel title shows "AUTO" or no indicator when scroll_offset is 0
+            Given log_scroll_offset = 0
+            When the log Panel is built
+            Then the panel title does NOT contain "↑" — indicating auto-scroll mode is active
+
+        Scenario: new log lines do not auto-scroll when scroll_offset > 0
+            Given log_scroll_offset = 3 and a new line is appended to log_buffer
+            When build_renderable is called on the next poll
+            Then log_scroll_offset remains 3 — the view does not jump to the bottom
+
+        Scenario: new log lines DO auto-scroll when scroll_offset is 0
+            Given log_scroll_offset = 0 and a new line is appended to log_buffer
+            When build_renderable is called on the next poll
+            Then the log panel shows the newest line at the bottom — scroll_offset stays 0
+
+        Scenario: scroll up beyond buffer start is clamped and does not raise IndexError
+            Given log_buffer has 5 lines and log_scroll_offset = 4
+            When the user presses up-arrow again (would make offset=5)
+            Then log_scroll_offset is clamped to max(0, len(log_buffer) - LOG_HEIGHT)
+            And format_log_strip does not raise IndexError
+
+        Scenario: format_log_strip returns placeholder when log_buffer is empty regardless of scroll_offset
+            Given log_buffer = deque([]) and scroll_offset = 0
+            When format_log_strip(log_buffer, height=8, scroll_offset=0) is called
+            Then it returns a non-empty placeholder string (e.g. "(waiting for orchestrator output...)")

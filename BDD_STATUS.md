@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 347 scenario(s) across 62 test file(s).
+Checked 432 scenario(s) across 62 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -455,5 +455,197 @@ Checked 347 scenario(s) across 62 test file(s).
 - [x] Integration test agent fails session on persistent failure
 - [x] Integration test agent writes test result log
 
+## Feature: Worktree Session Lifecycle
+
+- [ ] UNCOVERED: evolve.sh appends session_start to sessions.jsonl when worktree is created
+- [ ] UNCOVERED: evolve.sh appends session_end to sessions.jsonl on normal completion
+- [ ] UNCOVERED: evolve.sh appends session_end to sessions.jsonl on failure or early exit
+- [ ] UNCOVERED: orchestrate.py appends session_start per worker worktree it spawns
+- [ ] UNCOVERED: orchestrate.py appends session_end for each worker when it finishes
+- [ ] UNCOVERED: sessions.jsonl is created if it does not exist
+- [ ] UNCOVERED: sessions.jsonl append is atomic enough to avoid corruption under parallel writes
+- [ ] UNCOVERED: read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
+- [ ] UNCOVERED: read_sessions returns empty list when sessions.jsonl does not exist
+- [ ] UNCOVERED: read_sessions skips malformed JSON lines without crashing
+- [ ] UNCOVERED: active_wt_paths(sessions_path) returns only wt_paths with session_start and no session_end
+- [ ] UNCOVERED: active_wt_paths excludes sessions older than SESSION_TIMEOUT seconds
+- [ ] UNCOVERED: active_wt_paths handles duplicate session_start lines for the same wt_path
+
+## Feature: Dashboard Worktree Staleness Filtering
+
+- [ ] UNCOVERED: discover_worktrees runs git worktree prune before listing
+- [ ] UNCOVERED: discover_worktrees excludes worktrees absent from sessions.jsonl active set
+- [ ] UNCOVERED: discover_worktrees includes worktrees present in both git list and active set
+- [ ] UNCOVERED: discover_worktrees falls back to git list only when sessions.jsonl is absent
+- [ ] UNCOVERED: discover_worktrees excludes worktrees whose /tmp directory no longer exists on disk
+- [ ] UNCOVERED: discover_worktrees treats stale sessions (no session_end, age > SESSION_TIMEOUT) as inactive
+- [ ] UNCOVERED: discover_worktrees returns empty list when git worktree prune itself raises OSError
+- [ ] UNCOVERED: discover_worktrees returns consistent results under concurrent calls
+- [ ] UNCOVERED: discover_worktrees excludes worktrees with session_end written within the last 2 seconds
+- [ ] UNCOVERED: git worktree prune is skipped when main_dir is not a git repository
+
+## Feature: Dashboard BTOP-Style Responsive Layout
+
+- [ ] UNCOVERED: build_layout() returns a rich.layout.Layout with header, body, log, statusbar sections
+- [ ] UNCOVERED: agent grid uses 1 column when terminal width is less than 160
+- [ ] UNCOVERED: agent grid uses 2 columns when terminal width is 160 to 239
+- [ ] UNCOVERED: agent grid uses 3 columns when terminal width is 240 or more
+- [ ] UNCOVERED: build_renderable updates Layout sections instead of returning a Group
+- [ ] UNCOVERED: Layout degrades to single-column Group when rich.layout.Layout raises NotImplementedError
+- [ ] UNCOVERED: Column count recalculates on every poll when terminal is resized
+- [x] Empty agent list renders body section as a centered "waiting for agents" Panel
+- [x] Single agent fills full width regardless of column threshold
+
+## Feature: Dashboard Token Sparklines
+
+- [ ] UNCOVERED: AgentState has a token_history field that is a deque with maxlen=60
+- [ ] UNCOVERED: read_wt_state populates token_history from api_response events
+- [ ] UNCOVERED: render_sparkline maps values to 8 block characters by percentile bucket
+- [ ] UNCOVERED: render_sparkline returns a string of exactly `width` characters
+- [ ] UNCOVERED: render_sparkline right-aligns when history has fewer points than width
+- [ ] UNCOVERED: render_sparkline returns all "▁" when all values are equal (flat line)
+- [ ] UNCOVERED: render_sparkline returns width spaces when history is empty
+- [ ] UNCOVERED: render_sparkline truncates to rightmost `width` points when history is longer than width
+- [ ] UNCOVERED: build_agent_panel includes the sparkline string inside the panel body
+- [ ] UNCOVERED: sparkline line in agent panel is labelled "tok/iter" to explain the graph
+- [ ] UNCOVERED: render_sparkline handles a single-element history without IndexError
+
+## Feature: Dashboard Gradient Progress Bars
+
+- [ ] UNCOVERED: render_gradient_bar returns green-marked filled chars at 0 percent used
+- [ ] UNCOVERED: render_gradient_bar returns green markup at 30 percent used
+- [ ] UNCOVERED: render_gradient_bar switches to yellow markup at 50 percent used
+- [ ] UNCOVERED: render_gradient_bar switches to red markup at 75 percent used
+- [ ] UNCOVERED: render_gradient_bar switches to bold red markup at 90 percent used
+- [ ] UNCOVERED: render_gradient_bar returns fully filled bold-red bar at 100 percent
+- [ ] UNCOVERED: render_gradient_bar result is exactly width visible characters when markup is stripped
+- [ ] UNCOVERED: render_gradient_bar does not raise ZeroDivisionError when max_val is 0
+- [ ] UNCOVERED: render_gradient_bar clamps filled chars to width when current exceeds max_val
+- [ ] UNCOVERED: build_agent_panel uses render_gradient_bar instead of plain render_progress_bar
+
+## Feature: Dashboard Status Bar
+
+- [ ] UNCOVERED: build_status_bar returns a rich.text.Text object
+- [ ] UNCOVERED: build_status_bar shows correct agent count
+- [ ] UNCOVERED: build_status_bar shows summed token count across all agents
+- [ ] UNCOVERED: build_status_bar shows session uptime in Xm Xs format
+- [ ] UNCOVERED: build_status_bar contains all four keybinding hints
+- [ ] UNCOVERED: build_status_bar text is padded to exactly terminal_width characters
+- [ ] UNCOVERED: build_status_bar uses reverse-video style for background
+- [ ] UNCOVERED: build_status_bar shows "agents: 0" when states is empty
+- [ ] UNCOVERED: build_status_bar does not raise when terminal_width is 0 or 1
+
+## Feature: Dashboard Keyboard Input
+
+- [ ] UNCOVERED: keyboard_input_thread is a daemon thread started in main()
+- [ ] UNCOVERED: pressing q puts "q" into the key_queue
+- [x] main loop reads q from key_queue and exits the Live loop
+- [ ] UNCOVERED: pressing r puts "r" into the key_queue and triggers immediate refresh
+- [ ] UNCOVERED: pressing up-arrow puts "up" into the key_queue
+- [ ] UNCOVERED: pressing down-arrow puts "down" into the key_queue
+- [ ] UNCOVERED: up-arrow increments log_scroll_offset by 1
+- [ ] UNCOVERED: down-arrow decrements log_scroll_offset by 1 but not below 0
+- [ ] UNCOVERED: down-arrow at offset 0 does not go negative
+- [ ] UNCOVERED: keyboard_input_thread restores terminal settings on exit
+- [ ] UNCOVERED: keyboard_input_thread does not crash when stdin is not a tty (e.g. CI pipe)
+- [ ] UNCOVERED: key_queue is bounded (maxsize=32) to prevent unbounded growth if keys are ignored
+- [ ] UNCOVERED: multiple queued keystrokes are all drained in a single poll cycle
+
+## Feature: Dashboard Log Panel Scrolling
+
+- [ ] UNCOVERED: format_log_strip with scroll_offset=0 returns the last `height` lines of log_buffer
+- [ ] UNCOVERED: format_log_strip with scroll_offset=5 returns lines shifted 5 back from the end
+- [ ] UNCOVERED: format_log_strip clamps scroll_offset so it never scrolls before the first line
+- [ ] UNCOVERED: format_log_strip pads with empty lines when log_buffer has fewer than height lines
+- [ ] UNCOVERED: log Panel title shows scroll position indicator when scroll_offset > 0
+- [x] log Panel title shows "AUTO" or no indicator when scroll_offset is 0
+- [ ] UNCOVERED: new log lines do not auto-scroll when scroll_offset > 0
+- [ ] UNCOVERED: new log lines DO auto-scroll when scroll_offset is 0
+- [ ] UNCOVERED: scroll up beyond buffer start is clamped and does not raise IndexError
+- [ ] UNCOVERED: format_log_strip returns placeholder when log_buffer is empty regardless of scroll_offset
+
 ---
-**347/347 scenarios covered.**
+**351/432 scenarios covered.**
+
+81 scenario(s) need tests:
+- evolve.sh appends session_start to sessions.jsonl when worktree is created
+- evolve.sh appends session_end to sessions.jsonl on normal completion
+- evolve.sh appends session_end to sessions.jsonl on failure or early exit
+- orchestrate.py appends session_start per worker worktree it spawns
+- orchestrate.py appends session_end for each worker when it finishes
+- sessions.jsonl is created if it does not exist
+- sessions.jsonl append is atomic enough to avoid corruption under parallel writes
+- read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
+- read_sessions returns empty list when sessions.jsonl does not exist
+- read_sessions skips malformed JSON lines without crashing
+- active_wt_paths(sessions_path) returns only wt_paths with session_start and no session_end
+- active_wt_paths excludes sessions older than SESSION_TIMEOUT seconds
+- active_wt_paths handles duplicate session_start lines for the same wt_path
+- discover_worktrees runs git worktree prune before listing
+- discover_worktrees excludes worktrees absent from sessions.jsonl active set
+- discover_worktrees includes worktrees present in both git list and active set
+- discover_worktrees falls back to git list only when sessions.jsonl is absent
+- discover_worktrees excludes worktrees whose /tmp directory no longer exists on disk
+- discover_worktrees treats stale sessions (no session_end, age > SESSION_TIMEOUT) as inactive
+- discover_worktrees returns empty list when git worktree prune itself raises OSError
+- discover_worktrees returns consistent results under concurrent calls
+- discover_worktrees excludes worktrees with session_end written within the last 2 seconds
+- git worktree prune is skipped when main_dir is not a git repository
+- build_layout() returns a rich.layout.Layout with header, body, log, statusbar sections
+- agent grid uses 1 column when terminal width is less than 160
+- agent grid uses 2 columns when terminal width is 160 to 239
+- agent grid uses 3 columns when terminal width is 240 or more
+- build_renderable updates Layout sections instead of returning a Group
+- Layout degrades to single-column Group when rich.layout.Layout raises NotImplementedError
+- Column count recalculates on every poll when terminal is resized
+- AgentState has a token_history field that is a deque with maxlen=60
+- read_wt_state populates token_history from api_response events
+- render_sparkline maps values to 8 block characters by percentile bucket
+- render_sparkline returns a string of exactly `width` characters
+- render_sparkline right-aligns when history has fewer points than width
+- render_sparkline returns all "▁" when all values are equal (flat line)
+- render_sparkline returns width spaces when history is empty
+- render_sparkline truncates to rightmost `width` points when history is longer than width
+- build_agent_panel includes the sparkline string inside the panel body
+- sparkline line in agent panel is labelled "tok/iter" to explain the graph
+- render_sparkline handles a single-element history without IndexError
+- render_gradient_bar returns green-marked filled chars at 0 percent used
+- render_gradient_bar returns green markup at 30 percent used
+- render_gradient_bar switches to yellow markup at 50 percent used
+- render_gradient_bar switches to red markup at 75 percent used
+- render_gradient_bar switches to bold red markup at 90 percent used
+- render_gradient_bar returns fully filled bold-red bar at 100 percent
+- render_gradient_bar result is exactly width visible characters when markup is stripped
+- render_gradient_bar does not raise ZeroDivisionError when max_val is 0
+- render_gradient_bar clamps filled chars to width when current exceeds max_val
+- build_agent_panel uses render_gradient_bar instead of plain render_progress_bar
+- build_status_bar returns a rich.text.Text object
+- build_status_bar shows correct agent count
+- build_status_bar shows summed token count across all agents
+- build_status_bar shows session uptime in Xm Xs format
+- build_status_bar contains all four keybinding hints
+- build_status_bar text is padded to exactly terminal_width characters
+- build_status_bar uses reverse-video style for background
+- build_status_bar shows "agents: 0" when states is empty
+- build_status_bar does not raise when terminal_width is 0 or 1
+- keyboard_input_thread is a daemon thread started in main()
+- pressing q puts "q" into the key_queue
+- pressing r puts "r" into the key_queue and triggers immediate refresh
+- pressing up-arrow puts "up" into the key_queue
+- pressing down-arrow puts "down" into the key_queue
+- up-arrow increments log_scroll_offset by 1
+- down-arrow decrements log_scroll_offset by 1 but not below 0
+- down-arrow at offset 0 does not go negative
+- keyboard_input_thread restores terminal settings on exit
+- keyboard_input_thread does not crash when stdin is not a tty (e.g. CI pipe)
+- key_queue is bounded (maxsize=32) to prevent unbounded growth if keys are ignored
+- multiple queued keystrokes are all drained in a single poll cycle
+- format_log_strip with scroll_offset=0 returns the last `height` lines of log_buffer
+- format_log_strip with scroll_offset=5 returns lines shifted 5 back from the end
+- format_log_strip clamps scroll_offset so it never scrolls before the first line
+- format_log_strip pads with empty lines when log_buffer has fewer than height lines
+- log Panel title shows scroll position indicator when scroll_offset > 0
+- new log lines do not auto-scroll when scroll_offset > 0
+- new log lines DO auto-scroll when scroll_offset is 0
+- scroll up beyond buffer start is clamped and does not raise IndexError
+- format_log_strip returns placeholder when log_buffer is empty regardless of scroll_offset

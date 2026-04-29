@@ -52,7 +52,9 @@
       "Bash(echo \"Lock: $?\")",
       "Bash(git stash *)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(xargs ls *)"
     ]
   }
 }
