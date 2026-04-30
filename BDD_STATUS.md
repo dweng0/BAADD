@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 432 scenario(s) across 63 test file(s).
+Checked 428 scenario(s) across 63 test file(s).
 
 
 ## Feature: BDD Specification Parser
@@ -174,8 +174,6 @@ Checked 432 scenario(s) across 63 test file(s).
 ## Feature: Parallel Agent Orchestration
 
 - [x] Find uncovered scenarios for orchestration
-- [x] AI-powered scenario ordering
-- [x] Fallback to BDD.md order on AI failure
 - [x] Select top N scenarios for parallel run
 - [x] Create worktrees for parallel scenarios
 - [x] Run agents in parallel with ThreadPoolExecutor
@@ -191,8 +189,6 @@ Checked 432 scenario(s) across 63 test file(s).
 - [x] Override max parallel agents via CLI
 - [x] Dry run mode shows plan without execution
 - [x] Custom BDD.md path via --bdd flag
-- [x] Override orchestrator planning model
-- [x] Force orchestrator provider via CLI
 - [x] Worker result structure
 - [x] Status indicators for worker output
 - [x] Worker with no commits shows fail status
@@ -457,12 +453,12 @@ Checked 432 scenario(s) across 63 test file(s).
 
 ## Feature: Worktree Session Lifecycle
 
-- [ ] UNCOVERED: evolve.sh appends session_start to sessions.jsonl when worktree is created
-- [ ] UNCOVERED: evolve.sh appends session_end to sessions.jsonl on normal completion
-- [ ] UNCOVERED: evolve.sh appends session_end to sessions.jsonl on failure or early exit
-- [ ] UNCOVERED: orchestrate.py appends session_start per worker worktree it spawns
-- [ ] UNCOVERED: orchestrate.py appends session_end for each worker when it finishes
-- [x] sessions.jsonl is created if it does not exist
+- [x] evolve.sh appends session_start to sessions.jsonl when worktree is created
+- [x] evolve.sh appends session_end to sessions.jsonl on normal completion
+- [x] evolve.sh appends session_end to sessions.jsonl on failure or early exit
+- [x] orchestrate.py appends session_start per worker worktree it spawns
+- [x] orchestrate.py appends session_end for each worker when it finishes
+- [ ] UNCOVERED: sessions.jsonl is created if it does not exist
 - [ ] UNCOVERED: sessions.jsonl append is atomic enough to avoid corruption under parallel writes
 - [ ] UNCOVERED: read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
 - [ ] UNCOVERED: read_sessions returns empty list when sessions.jsonl does not exist
@@ -565,14 +561,10 @@ Checked 432 scenario(s) across 63 test file(s).
 - [ ] UNCOVERED: format_log_strip returns placeholder when log_buffer is empty regardless of scroll_offset
 
 ---
-**352/432 scenarios covered.**
+**352/428 scenarios covered.**
 
-80 scenario(s) need tests:
-- evolve.sh appends session_start to sessions.jsonl when worktree is created
-- evolve.sh appends session_end to sessions.jsonl on normal completion
-- evolve.sh appends session_end to sessions.jsonl on failure or early exit
-- orchestrate.py appends session_start per worker worktree it spawns
-- orchestrate.py appends session_end for each worker when it finishes
+76 scenario(s) need tests:
+- sessions.jsonl is created if it does not exist
 - sessions.jsonl append is atomic enough to avoid corruption under parallel writes
 - read_sessions(sessions_path) returns list of dicts parsed from sessions.jsonl
 - read_sessions returns empty list when sessions.jsonl does not exist

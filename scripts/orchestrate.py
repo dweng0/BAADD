@@ -663,6 +663,18 @@ def main():
             context_src = os.path.join(main_dir, "CONTEXT.md")
             if os.path.exists(context_src):
                 run_cmd(f'cp "{context_src}" "{wt_path}/"')
+            # Log session_start when worktree is created for this scenario
+            sessions_path = os.path.join(main_dir, "sessions.jsonl")
+            append_session_event(
+                sessions_path,
+                {
+                    "type": "session_start",
+                    "scenario": scenario_name,
+                    "pid": os.getpid(),
+                    "wt_path": wt_path,
+                    "ts": time.time(),
+                },
+            )
             workers[scenario_name] = (wt_path, branch)
             lines = len(open(scenario_md).readlines())
             print(
