@@ -669,3 +669,6 @@
 {"ts": "2026-04-29T20:58:11.537658", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
 {"ts": "2026-04-29T20:58:11.537787", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
 {"ts": "2026-04-29T20:58:11.548424", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
+{"ts": "2026-04-30T13:59:57.016455", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
+{"ts": "2026-04-30T13:59:57.016573", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
+{"ts": "2026-04-30T13:59:57.027482", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
