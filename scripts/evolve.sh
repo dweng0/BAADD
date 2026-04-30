@@ -229,6 +229,7 @@ if [ "$USE_WORKTREE" = "yes" ]; then
     git worktree add "$WT_PATH" -b "$BRANCH"
     # Copy over runtime files the agent needs but that aren't in git
     cp "$ISSUES_FILE" "$WT_PATH/" 2>/dev/null || true
+    cp "$MAIN_DIR/CONTEXT.md" "$WT_PATH/" 2>/dev/null || true
     # Extract just the relevant Feature block — keeps context small for local/small-context models
     if bash "$MAIN_DIR/scripts/extract_scenario.sh" "$TARGET_SCENARIO" "$MAIN_DIR/BDD.md" "$WT_PATH/BDD_SCENARIO.md" 2>/dev/null; then
         SCENARIO_FILE="BDD_SCENARIO.md"
@@ -269,6 +270,7 @@ Read these files first:
 3. BDD_STATUS.md — current coverage
 4. JOURNAL_INDEX.md — past session summaries (read JOURNAL.md only if you need detail)
 5. ISSUES_TODAY.md — community requests
+6. CONTEXT.md — domain glossary (if present — use its terminology for all naming)
 
 ${CI_STATUS_MSG:+
 === CI STATUS ===
@@ -357,6 +359,7 @@ Read these files first:
 2. BDD_STATUS.md — current scenario coverage
 3. JOURNAL_INDEX.md — past session summaries
 4. ISSUES_TODAY.md — community requests
+5. CONTEXT.md — domain glossary (if present — use its terminology for all naming)
 
 Do NOT read BDD.md directly — it is ~130KB. Use BDD_STATUS.md for coverage info.
 

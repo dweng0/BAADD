@@ -639,6 +639,10 @@ def main():
                 )
                 remove_worktree(wt_path, branch, main_dir)
                 continue
+            # Copy domain glossary if present — agents use it for consistent naming
+            context_src = os.path.join(main_dir, "CONTEXT.md")
+            if os.path.exists(context_src):
+                run_cmd(f'cp "{context_src}" "{wt_path}/"')
             workers[scenario_name] = (wt_path, branch)
             lines = len(open(scenario_md).readlines())
             print(f"  {scenario_name[:50]} → {wt_path} ({lines} lines spec)", flush=True)

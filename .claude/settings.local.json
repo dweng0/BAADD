@@ -56,7 +56,10 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(xargs ls *)",
       "Bash(bash *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(xargs cat *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

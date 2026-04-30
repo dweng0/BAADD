@@ -221,6 +221,7 @@ You do NOT write any source or test code. You do NOT run tests. You do NOT commi
 === YOUR TASK ===
 
 Read BDD_SCENARIO.md now — it contains your complete scenario spec (~30 lines). Do NOT read BDD.md — it is ~130KB and will exhaust your context.
+If CONTEXT.md is present, read it — use its domain terminology for all naming in the plan.
 Use the write_file tool to create PLAN.md in the current directory. Writing PLAN.md is the ONLY output
 you produce — do not describe the plan in text, do not use any other tool.
 
@@ -318,6 +319,7 @@ Branch: {branch}
 
 Your ONLY job is to implement the design in PLAN.md exactly as written.
 Read PLAN.md now before doing anything else.
+If CONTEXT.md is present, read it — use its domain terminology for all naming.
 
 {retry_section}
 === CONSTRAINTS (absolute — no exceptions) ===

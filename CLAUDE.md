@@ -10,6 +10,7 @@ poppins (Behaviour and AI Driven Development) — a framework where an AI agent 
 
 - `BDD.md` — the spec (frontmatter configures language/build/test commands)
 - `IDENTITY.md` — agent constitution (do not modify)
+- `CONTEXT.md` — domain glossary (if present — read it; use its terminology for naming variables, functions, and files)
 - `scripts/evolve.sh` — main evolution loop
 - `scripts/agent.py` — AI agent runner (requires `pip install anthropic`)
 - `scripts/check_bdd_coverage.py` — verifies all scenarios have test coverage
