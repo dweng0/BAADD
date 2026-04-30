@@ -702,3 +702,15 @@
 {"ts": "2026-04-30T14:10:56.335430", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
 {"ts": "2026-04-30T14:10:56.335545", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
 {"ts": "2026-04-30T14:10:56.345931", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
+{"ts": "2026-04-30T16:43:27.932453", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
+{"ts": "2026-04-30T16:43:27.932611", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
+{"ts": "2026-04-30T16:43:27.953020", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
+{"ts": "2026-04-30T16:43:44.313821", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
+{"ts": "2026-04-30T16:43:44.313928", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
+{"ts": "2026-04-30T16:43:44.325337", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
+{"ts": "2026-04-30T17:23:34.157872", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
+{"ts": "2026-04-30T17:23:34.157934", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
+{"ts": "2026-04-30T17:23:34.161796", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}
+{"ts": "2026-04-30T17:24:04.767874", "event": "conflict_marker_removed", "file": "test.py", "version": "A"}
+{"ts": "2026-04-30T17:24:04.767938", "event": "conflict_marker_removed", "file": "test.py", "version": "B"}
+{"ts": "2026-04-30T17:24:04.772255", "event": "import_merge", "file": "test_sample.py", "scenario_a": "Scenario A", "scenario_b": "Scenario B"}

@@ -128,10 +128,11 @@ IN_CI = os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "t
 
 
 def _strip_thinking(text):
-    """Remove <|channel>thought...<channel|> reasoning blocks from model output."""
+    """Extract and return (thoughts_list, clean_text) from <|channel>...<channel|> blocks."""
     import re
+    thoughts = re.findall(r"<\|channel>(.*?)<channel\|>", text, flags=re.DOTALL)
     cleaned = re.sub(r"<\|channel>.*?<channel\|>", "", text, flags=re.DOTALL)
-    return cleaned.strip()
+    return [t.strip() for t in thoughts if t.strip()], cleaned.strip()
 
 # Icons for tool types (plain-text, no emoji to keep CI logs clean)
 TOOL_ICONS = {
@@ -826,7 +827,14 @@ def run_anthropic_loop(api_key, model, system_prompt, prompt, mode, event_log):
                 text = block.text.strip()
                 if text:
                     event_log.agent_text(text, iteration)
-                    display = _strip_thinking(text)
+                    thoughts, display = _strip_thinking(text)
+                    for thought in thoughts:
+                        if IN_CI:
+                            _ci_group(f"Thinking [{iteration}]: {thought[:80]}...")
+                            print(thought, flush=True)
+                            _ci_endgroup()
+                        else:
+                            print(f"\n\033[2m~ {thought}\033[0m", flush=True)
                     if display:
                         if IN_CI:
                             _ci_group(
@@ -1001,7 +1009,14 @@ def run_openai_loop(client, model, system_prompt, prompt, mode, event_log):
 
         if text:
             event_log.agent_text(text, iteration)
-            display = _strip_thinking(text)
+            thoughts, display = _strip_thinking(text)
+            for thought in thoughts:
+                if IN_CI:
+                    _ci_group(f"Thinking [{iteration}]: {thought[:80]}...")
+                    print(thought, flush=True)
+                    _ci_endgroup()
+                else:
+                    print(f"\n\033[2m~ {thought}\033[0m", flush=True)
             if display:
                 if IN_CI:
                     _ci_group(f"Agent [{iteration}/{MAX_ITERATIONS}]: {display[:80]}...")

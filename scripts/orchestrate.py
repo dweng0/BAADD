@@ -29,7 +29,7 @@ from glob import glob
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from parse_poppins_config import get_config
 from check_bdd_coverage import parse_scenarios, find_test_files, check_coverage
-from pm_worker import run_pm_pipeline, extract_scenario_block
+from pm_worker import run_pm_pipeline
 
 
 def run_merge_agent(scenario_results, main_dir):
@@ -383,81 +383,6 @@ def resolve_model_and_client(provider, model_override=None):
     return model, call
 
 
-SCENARIO_ORDER_FILE = "scenario_order.md"
-
-
-def load_cached_order(path):
-    """Load scenario order from cache file. Returns list or None if missing/empty."""
-    try:
-        with open(path) as f:
-            lines = f.readlines()
-        names = [line[2:].strip() for line in lines if line.strip().startswith("- ")]
-        return names if names else None
-    except FileNotFoundError:
-        return None
-
-
-def save_scenario_order(path, ordered_names):
-    """Persist ordered scenario list to cache file."""
-    with open(path, "w") as f:
-        f.write("# Scenario Order\n")
-        f.write(f"<!-- generated: {time.strftime('%Y-%m-%d %H:%M')} -->\n\n")
-        for name in ordered_names:
-            f.write(f"- {name}\n")
-
-
-def plan_scenario_order(uncovered, bdd_content, provider, model_override=None):
-    """Use a single AI call to order scenarios by dependency and priority.
-
-    Returns a list of scenario names in recommended implementation order.
-    Falls back to BDD.md order if the AI call fails or no provider is available.
-    """
-    scenario_names = [s for _, s in uncovered]
-
-    if len(scenario_names) <= 1:
-        return scenario_names
-
-    if not provider:
-        print("  No LLM provider available — using BDD.md order", flush=True)
-        return scenario_names
-
-    prompt = f"""You are analyzing a BDD specification to determine the best implementation order for uncovered scenarios.
-
-Here is the full BDD spec:
-
-<bdd>
-{bdd_content[:8000]}
-</bdd>
-
-The following scenarios are UNCOVERED (no tests yet):
-{json.dumps(scenario_names, indent=2)}
-
-Analyze these scenarios and return them in optimal implementation order. Consider:
-1. Dependencies — if scenario B requires functionality from scenario A, A goes first
-2. Foundational work — scaffolding/setup scenarios before feature scenarios
-3. Complexity — simpler scenarios first to build a working base
-4. Feature grouping — scenarios in the same feature that share setup are cheaper to implement together
-
-Return ONLY a JSON array of scenario names in the order they should be implemented.
-No explanation, no markdown, just the JSON array. Example:
-["Login with valid credentials", "View user dashboard", "Logout"]"""
-
-    try:
-        model, call = resolve_model_and_client(provider, model_override)
-        print(f"  Planning with {provider} / {model}", flush=True)
-        text = call(prompt)
-        match = re.search(r"\[.*\]", text, re.DOTALL)
-        if match:
-            ordered = json.loads(match.group())
-            if set(ordered) == set(scenario_names):
-                return ordered
-            # AI returned a subset — append anything missing
-            missing = [s for s in scenario_names if s not in ordered]
-            return ordered + missing
-    except Exception as e:
-        print(f"  AI ordering failed ({e}), using BDD.md order", flush=True)
-
-    return scenario_names
 
 
 def create_worktree(scenario_slug, main_dir):
@@ -506,8 +431,9 @@ You are working in a git worktree on branch: {branch}
 
 Read these files first, in this order:
 1. IDENTITY.md — your rules and purpose
-2. BDD.md — the spec (this is the ONLY thing you build)
-3. BDD_STATUS.md — which scenarios are currently covered
+2. BDD_SCENARIO.md — your scoped spec (frontmatter + the one scenario you must implement)
+
+DO NOT read BDD.md — it is ~130KB and will exhaust your context. BDD_SCENARIO.md contains everything you need.
 
 === YOUR TARGET SCENARIO ===
 
@@ -517,9 +443,9 @@ You must implement exactly this one scenario this session:
 
 Do not pick a different scenario. Implement this scenario.
 
-=== PHASE 1: Read BDD.md (MANDATORY) ===
+=== PHASE 1: Read BDD_SCENARIO.md (MANDATORY) ===
 
-BDD.md is your spec. Read it before doing anything else.
+BDD_SCENARIO.md is your complete spec. Read it before doing anything else.
 
 === PHASE 2: Implement ===
 
@@ -551,10 +477,10 @@ The correct TDD cycle — ALL steps must complete before any commit:
   4. Write the implementation code that makes it pass
 
   5. Run build and tests — confirm ALL tests PASS:
-       eval "$(python3 scripts/parse_bdd_config.py BDD.md)" && eval "$BUILD_CMD" && eval "$TEST_CMD"
+       eval "$(python3 scripts/parse_bdd_config.py BDD_SCENARIO.md)" && eval "$BUILD_CMD" && eval "$TEST_CMD"
 
   6. Only now commit:
-       git add -A -- ':!BDD_STATUS.md' ':!JOURNAL.md' ':!JOURNAL_INDEX.md' ':!BDD.md'
+       git add -A -- ':!BDD_STATUS.md' ':!JOURNAL.md' ':!JOURNAL_INDEX.md' ':!BDD.md' ':!BDD_SCENARIO.md'
        git commit -m "{date} {session_time}: implement {scenario_name}"
 
 If checks fail after your implementation:
@@ -565,6 +491,7 @@ If checks fail after your implementation:
 === PHASE 3: Verify ===
 
 Run: python3 scripts/check_bdd_coverage.py BDD.md
+(BDD.md is used here only by the coverage checker — do not read it yourself)
 Confirm "{scenario_name}" is now marked [x].
 
 If it is STILL marked [ ] UNCOVERED:
@@ -585,7 +512,7 @@ Write a journal entry to JOURNAL_ENTRY.md (NOT JOURNAL.md):
 
 Then: git add JOURNAL_ENTRY.md && git commit -m "{date} {session_time}: journal entry"
 
-Now begin. Read IDENTITY.md first, then BDD.md.
+Now begin. Read IDENTITY.md first, then BDD_SCENARIO.md. Do NOT read full BDD.md.
 """
 
     # Write prompt to temp file
@@ -596,10 +523,23 @@ Now begin. Read IDENTITY.md first, then BDD.md.
         f.write(prompt)
 
     # Copy runtime files to worktree
-    for runtime_file in ["ISSUES_TODAY.md", "BDD.md", "BDD_STATUS.md"]:
+    for runtime_file in ["ISSUES_TODAY.md", "BDD_STATUS.md"]:
         src = os.path.join(main_dir, runtime_file)
         if os.path.exists(src):
             run_cmd(f'cp "{src}" "{wt_path}/"')
+
+    # Extract scoped spec — only the target scenario's Feature block (~30 lines vs ~130KB)
+    extract_result, _, extract_rc = run_cmd(
+        f'bash "{main_dir}/scripts/extract_scenario.sh" '
+        f'"{scenario_name}" "{main_dir}/BDD.md" "{wt_path}/BDD_SCENARIO.md"'
+    )
+    if extract_rc != 0:
+        # Fallback: copy full BDD.md so the agent can still work
+        run_cmd(f'cp "{main_dir}/BDD.md" "{wt_path}/BDD_SCENARIO.md"')
+        print(f"  BDD_SCENARIO.md: fallback to full BDD.md (extract failed)", flush=True)
+    else:
+        lines = extract_result.strip().split("\n")[0] if extract_result else ""
+        print(f"  BDD_SCENARIO.md: {lines}", flush=True)
 
     # Run the agent - stream output in real-time
     event_log = os.path.join(wt_path, "agent_events.jsonl")
@@ -943,29 +883,10 @@ def main():
         print(f"    - [{feature}] {scenario}", flush=True)
     print("", flush=True)
 
-    # Step 2: AI-powered ordering (with cache)
-    uncovered_names = [s for _, s in uncovered]
-    bdd_content = read_file_safe(args.bdd)
-    cached = load_cached_order(SCENARIO_ORDER_FILE)
-    if cached is not None and set(uncovered_names).issubset(set(cached)):
-        # All current uncovered scenarios present in cache — use cached order
-        ordered_names = [s for s in cached if s in set(uncovered_names)]
-        missing = [s for s in uncovered_names if s not in set(cached)]
-        if missing:
-            ordered_names = ordered_names + missing
-        print(f"  Using cached scenario order from {SCENARIO_ORDER_FILE}", flush=True)
-    else:
-        if cached is not None:
-            print("  Cached order stale (new scenarios in BDD.md) — re-ordering...", flush=True)
-        else:
-            print("  Ordering scenarios...", flush=True)
-        ordered_names = plan_scenario_order(
-            uncovered, bdd_content, provider, model_orch_override
-        )
-        save_scenario_order(SCENARIO_ORDER_FILE, ordered_names)
-        print(f"  Saved order to {SCENARIO_ORDER_FILE}", flush=True)
+    # Step 2: Use BDD.md natural order (top-to-bottom = intentional priority order)
+    ordered_names = [s for _, s in uncovered]
 
-    print("  Execution order:", flush=True)
+    print("  Execution order (BDD.md order):", flush=True)
     for i, name in enumerate(ordered_names, 1):
         print(f"    {i}. {name}", flush=True)
     print("", flush=True)
@@ -1016,9 +937,18 @@ def main():
                     f"  [WARN] Failed to create worktree for: {scenario_name}", flush=True
                 )
                 continue
-            scenario_text = extract_scenario_block(bdd_content, scenario_name)
+            # Extract scoped spec into worktree — avoids loading full BDD.md per agent
+            scenario_md = os.path.join(wt_path, "BDD_SCENARIO.md")
+            _, _, extract_rc = run_cmd(
+                f'bash "{main_dir}/scripts/extract_scenario.sh" '
+                f'"{scenario_name}" "{main_dir}/BDD.md" "{scenario_md}"'
+            )
+            if extract_rc != 0 or not os.path.exists(scenario_md):
+                run_cmd(f'cp "{main_dir}/BDD.md" "{scenario_md}"')
+            scenario_text = read_file_safe(scenario_md)
             workers[scenario_name] = (wt_path, branch, scenario_text)
-            print(f"  {scenario_name[:50]} → {wt_path}", flush=True)
+            lines = len(scenario_text.splitlines())
+            print(f"  {scenario_name[:50]} → {wt_path} ({lines} lines spec)", flush=True)
 
         if not workers:
             print("  No worktrees created for this round. Skipping.", flush=True)

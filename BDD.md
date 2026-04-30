@@ -2,7 +2,7 @@
 language: python
 framework: none
 build_cmd: python3 -m py_compile scripts/*.py && echo "Build OK"
-test_cmd: python3 -m pytest tests/ -v --tb=short 2>/dev/null || python3 tests/run_tests.py
+test_cmd: python3 -m pytest tests/ -q --tb=short --no-header 2>/dev/null || python3 tests/run_tests.py
 lint_cmd: python3 -m ruff check scripts/ tests/ --fix || echo "lint skipped"
 fmt_cmd: python3 -m ruff format scripts/ tests/ || echo "format skipped"
 birth_date: 2026-03-05
@@ -722,16 +722,6 @@ System: BAADD (Behaviour and AI Driven Development) — a framework where an AI 
             When orchestrate.py starts
             Then it lists all 8 for planning
 
-        Scenario: AI-powered scenario ordering
-            Given uncovered scenarios with dependencies
-            When orchestrator calls LLM for planning
-            Then scenarios are ordered by dependency and complexity
-
-        Scenario: Fallback to BDD.md order on AI failure
-            Given LLM planning call fails
-            When orchestrator cannot get AI ordering
-            Then it uses original BDD.md order
-
         Scenario: Select top N scenarios for parallel run
             Given 10 uncovered scenarios and max_parallel_agents=3
             When orchestrate.py selects scenarios
@@ -806,16 +796,6 @@ System: BAADD (Behaviour and AI Driven Development) — a framework where an AI 
             Given --bdd=/path/to/custom_bdd.md flag
             When orchestrate.py reads scenarios
             Then it parses from /path/to/custom_bdd.md
-
-        Scenario: Override orchestrator planning model
-            Given --model=claude-opus flag to orchestrate.py
-            When orchestrator calls LLM for ordering
-            Then it uses claude-opus for the planning call
-
-        Scenario: Force orchestrator provider via CLI
-            Given --provider=anthropic flag to orchestrate.py
-            When orchestrate.py detects provider
-            Then it uses "anthropic" from CLI flag
 
         Scenario: Worker result structure
             Given worker completes scenario implementation

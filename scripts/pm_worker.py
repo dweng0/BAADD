@@ -224,21 +224,21 @@ You do NOT write any source or test code. You do NOT run tests. You do NOT commi
 
 === YOUR TASK ===
 
-Read BDD.md to understand the full system context, then use the write_file tool
-to create PLAN.md in the current directory. Writing PLAN.md is the ONLY output
+The scenario spec above is your complete context. Do NOT read BDD.md — it is ~130KB and will exhaust your context.
+Use the write_file tool to create PLAN.md in the current directory. Writing PLAN.md is the ONLY output
 you produce — do not describe the plan in text, do not use any other tool.
 
 PLAN.md must contain these six sections (in order):
 
 ## 0. Commands
 
-Read BDD.md frontmatter (the YAML block at the top) and copy the exact shell
+Read BDD_SCENARIO.md frontmatter (the YAML block at the top — already in your worktree) and copy the exact shell
 commands the SE and Tester must use. This section is mandatory — it prevents
 every downstream agent from having to re-derive these themselves.
 
-  build_cmd: <exact value from BDD.md frontmatter>
-  test_cmd:  <exact value from BDD.md frontmatter>
-  lint_cmd:  <exact value from BDD.md frontmatter, or "none" if absent>
+  build_cmd: <exact value from BDD_SCENARIO.md frontmatter>
+  test_cmd:  <exact value from BDD_SCENARIO.md frontmatter>
+  lint_cmd:  <exact value from BDD_SCENARIO.md frontmatter, or "none" if absent>
   coverage_check: python3 scripts/check_bdd_coverage.py BDD.md
 
 The SE and Tester will copy these commands verbatim. Do not paraphrase.
@@ -309,7 +309,7 @@ to be thrown away.
 Example (only include if deletions are actually needed):
   - scripts/old_helper.py — superseded by the new unified loader in this scenario
 
-Use write_file to write PLAN.md now. That is your only action after reading BDD.md.
+Use write_file to write PLAN.md now. That is your only action after reading BDD_SCENARIO.md.
 Do not write any source code, test code, or other files. Do not commit.
 """
 

@@ -156,32 +156,32 @@ ci_endgroup
 
 echo ""
 
-# ── Step 5.5: Pre-compute coverage ──
-COVERAGE_OUTPUT=$(python3 scripts/check_bdd_coverage.py BDD.md 2>/dev/null || echo "Could not check coverage")
-COVERED_PRE=$(echo "$COVERAGE_OUTPUT" | grep -c '\- \[x\]' 2>/dev/null || echo 0)
-TOTAL_PRE=$(echo "$COVERAGE_OUTPUT" | grep -c '\- \[' 2>/dev/null || echo 0)
+# ── Step 5.5: Pre-compute coverage (single run) ──
+COVERAGE_OUTPUT=$(python3 scripts/check_bdd_coverage.py BDD.md 2>/dev/null || echo "")
+COVERED_PRE=$(echo "$COVERAGE_OUTPUT" | grep -c '\- \[x\]' || echo 0)
+TOTAL_PRE=$(echo "$COVERAGE_OUTPUT" | grep -c '\- \[' || echo 0)
 UNCOVERED_LIST=$(echo "$COVERAGE_OUTPUT" | grep 'UNCOVERED:' | sed 's/.*UNCOVERED: //' || true)
 HAS_WORK="no"
 if [ "$COVERED_PRE" -lt "$TOTAL_PRE" ] || [ "$ISSUE_COUNT" -gt 0 ]; then
     HAS_WORK="yes"
 fi
 echo "  Pre-session coverage: $COVERED_PRE/$TOTAL_PRE (has_work=$HAS_WORK)"
+unset COVERAGE_OUTPUT  # free memory — don't pass 130KB into agent prompt
 
 # ── Step 5.6: Scenario lock selection ──
-# Pick the first uncovered scenario that isn't already locked by another agent.
-# If all uncovered scenarios are locked, exit gracefully.
 USE_WORKTREE="no"
 
-if [ "$HAS_WORK" = "yes" ] && [ -n "$UNCOVERED_LIST" ]; then
+if [ "$HAS_WORK" = "yes" ]; then
+
     while IFS= read -r scenario; do
         [ -z "$scenario" ] && continue
         slug=$(scenario_to_slug "$scenario")
         lockfile="$LOCKS_DIR/${slug}.lock"
 
-        # Clear stale lock if the owning PID is gone
+        # Clear stale lock — evolve.sh uses real PIDs ($$), check with kill
         if [ -f "$lockfile" ]; then
-            locked_pid=$(grep '^PID=' "$lockfile" 2>/dev/null | cut -d= -f2 || echo "")
-            if [ -n "$locked_pid" ] && kill -0 "$locked_pid" 2>/dev/null; then
+            locked_pid=$(grep '^PID=' "$lockfile" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]' || echo "0")
+            if [ "$locked_pid" != "0" ] && kill -0 "$locked_pid" 2>/dev/null; then
                 echo "  Scenario locked by PID $locked_pid — skipping: $scenario"
                 continue
             else
@@ -190,8 +190,6 @@ if [ "$HAS_WORK" = "yes" ] && [ -n "$UNCOVERED_LIST" ]; then
             fi
         fi
 
-        # Atomically claim the lock with noclobber — fails if another agent
-        # won the race between our stale-check and this write.
         BRANCH="agent/${slug}-$(date +%Y%m%d-%H%M%S)"
         WT_PATH="/tmp/baadd-wt-${slug}-$$"
         if (set -o noclobber
@@ -230,6 +228,15 @@ if [ "$USE_WORKTREE" = "yes" ]; then
     git worktree add "$WT_PATH" -b "$BRANCH"
     # Copy over runtime files the agent needs but that aren't in git
     cp "$ISSUES_FILE" "$WT_PATH/" 2>/dev/null || true
+    # Extract just the relevant Feature block — keeps context small for local/small-context models
+    if bash "$MAIN_DIR/scripts/extract_scenario.sh" "$TARGET_SCENARIO" "$MAIN_DIR/BDD.md" "$WT_PATH/BDD_SCENARIO.md" 2>/dev/null; then
+        SCENARIO_FILE="BDD_SCENARIO.md"
+        echo "  BDD_SCENARIO.md: $(wc -l < "$WT_PATH/BDD_SCENARIO.md") lines (scoped spec)"
+    else
+        cp "$MAIN_DIR/BDD.md" "$WT_PATH/BDD_SCENARIO.md"
+        SCENARIO_FILE="BDD_SCENARIO.md"
+        echo "  BDD_SCENARIO.md: fallback to full BDD.md"
+    fi
     echo "  Worktree ready."
 fi
 
@@ -257,11 +264,13 @@ You are working in a git worktree on branch: $BRANCH
 
 Read these files first, in this order:
 1. IDENTITY.md — your rules and purpose
-2. BDD.md — the spec (this is the ONLY thing you build)
+2. BDD_SCENARIO.md — your scoped spec (the Feature containing your target scenario, extracted from BDD.md)
 3. BDD_STATUS.md — which scenarios are currently covered
 4. JOURNAL_INDEX.md — one-line summary per past session
    Only read JOURNAL.md if you need detail on a specific session.
 5. ISSUES_TODAY.md — community requests
+
+Do NOT read full BDD.md — BDD_SCENARIO.md contains everything you need for this session.
 
 ${CI_STATUS_MSG:+
 === CI STATUS ===
@@ -282,10 +291,10 @@ Do not pick a different scenario. Do not skip to journal. Implement this scenari
 Coverage: $COVERED_PRE/$TOTAL_PRE scenarios covered.
 Open issues: $ISSUE_COUNT
 
-=== PHASE 0: Read BDD.md (MANDATORY) ===
+=== PHASE 0: Read BDD_SCENARIO.md (MANDATORY) ===
 
-BDD.md is your spec. Read it before doing anything else.
-You ONLY build things described in BDD.md.
+BDD_SCENARIO.md is your scoped spec for this session. Read it before doing anything else.
+You ONLY build things described in BDD_SCENARIO.md.
 
 === PHASE 1: Assess Coverage ===
 
@@ -387,7 +396,7 @@ Test command:   $TEST_CMD
 Lint command:   $LINT_CMD
 Format command: $FMT_CMD
 
-Now begin. Read IDENTITY.md first, then BDD.md.
+Now begin. Read IDENTITY.md first, then BDD_SCENARIO.md. Do NOT read full BDD.md.
 PROMPT
 
 else
@@ -560,6 +569,7 @@ Format command: $FMT_CMD
 Now begin. Read IDENTITY.md first, then BDD.md.
 PROMPT
 fi
+
 
 AGENT_LOG=$(mktemp)
 cd "$AGENT_DIR"

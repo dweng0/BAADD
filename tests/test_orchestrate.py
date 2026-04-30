@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from orchestrate import scenario_to_slug, get_uncovered_scenarios, plan_scenario_order, select_scenarios, create_worktree, run_pm_pipeline
+from orchestrate import scenario_to_slug, get_uncovered_scenarios, select_scenarios, create_worktree, run_pm_pipeline
 
 
 # BDD: Slug truncates to 60 characters
@@ -80,46 +80,6 @@ Feature: Test Feature
     scenario_names = [s for _, s in result]
     assert "Alpha scenario one" in scenario_names
     assert "Theta scenario eight" in scenario_names
-
-
-# BDD: AI-powered scenario ordering
-def test_ai_powered_scenario_ordering():
-    """Orchestrator calls LLM and returns scenarios ordered by dependency and complexity."""
-    uncovered = [
-        ("feature", "Setup database schema"),
-        ("feature", "Create user account"),
-        ("feature", "Login with valid credentials"),
-    ]
-    bdd_content = "Feature: Auth\n  Scenario: Setup database schema\n  Scenario: Create user account\n  Scenario: Login with valid credentials"
-
-    ai_ordered = ["Setup database schema", "Create user account", "Login with valid credentials"]
-    mock_call = MagicMock(return_value=json.dumps(ai_ordered))
-
-    with patch("orchestrate.resolve_model_and_client", return_value=("test-model", mock_call)):
-        result = plan_scenario_order(uncovered, bdd_content, provider="anthropic")
-
-    assert result == ai_ordered, f"Expected AI ordering, got: {result}"
-    mock_call.assert_called_once()
-    prompt_arg = mock_call.call_args[0][0]
-    assert "Setup database schema" in prompt_arg
-    assert "Create user account" in prompt_arg
-
-
-# BDD: Fallback to BDD.md order on AI failure
-def test_fallback_to_bdd_order_on_ai_failure():
-    """When the LLM planning call fails, scenarios use original BDD.md order."""
-    uncovered = [
-        ("feature", "Alpha scenario"),
-        ("feature", "Beta scenario"),
-        ("feature", "Gamma scenario"),
-    ]
-    bdd_content = "Feature: Test\n  Scenario: Alpha scenario\n  Scenario: Beta scenario\n  Scenario: Gamma scenario"
-
-    with patch("orchestrate.resolve_model_and_client", side_effect=Exception("connection refused")):
-        result = plan_scenario_order(uncovered, bdd_content, provider="anthropic")
-
-    expected = ["Alpha scenario", "Beta scenario", "Gamma scenario"]
-    assert result == expected, f"Expected BDD.md order on failure, got: {result}"
 
 
 # BDD: Select top N scenarios for parallel run
